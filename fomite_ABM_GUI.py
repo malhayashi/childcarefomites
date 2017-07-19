@@ -17,22 +17,6 @@ from math import *
 from PIL import Image
 from PIL import ImageTk
 
-'''
-Notes:
-
-do I really need an explicit "contaminated" compartment?
--- might cause unnecessary accounting
--- but checking for contamination is also slow
-
-pre-calculate time to clearance using neg exp for each person/fomite
--- discrete neg exp equivalent?
-
-multi-fomite model/bi-partite human/fomite networkx
-
-output options
-
-'''
-
 global image1
 global image2
 

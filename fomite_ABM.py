@@ -42,6 +42,7 @@ class Agent(object):
         self.neighbors = neighbors
         self.fomiteNeighbors = []
         self.recoveryTime = recoverytime
+        self.data = [(self.timestamp,self.state),]
 
     def pathogen_decay(self,t,r):
         x = self.contamination*exp(-r*(t-self.timestamp))
@@ -91,7 +92,8 @@ class Model(object):
             'recovery': 0,
             'shedding': 0,
             'hand washing': 0,
-            'fomite contact': 0
+            'fomite contact': 0,
+            'symptom presentation': 0
         }
 
         self.susceptibleAgents = []
@@ -130,6 +132,10 @@ class Model(object):
             #print 'day', t, len(self.infectedAgents), 'infected'
             self.output.append([len(self.susceptibleAgents),len(self.contaminatedAgents),len(self.incubatingAgents),len(self.infectedAgents),sum([self.fomiteDict[i].contamination for i in self.fomiteDict]), t])
             print t
+            if self.deconFreq is not None:
+                if not t%self.deconFreq:
+                    for fId in self.fomiteDict:
+                        self.fomiteDict[fId].comtamination = 0
             #print self.events
             h = 0
             for i in self.agentDict:
@@ -159,11 +165,6 @@ class Model(object):
                         break
                 else:
                     break
-
-            if self.deconFreq is not None:
-                if not t%self.deconFreq:
-                    for fId in self.fomiteDict:
-                        self.fomiteDict[fId].comtamination = 0
 
             #fix this later for multiple fomites
             #self.output[t][4] = self.fomite.contamination
@@ -221,6 +222,7 @@ class Model(object):
             #print ' ', a.contamination*self.infProb
             a = self.agentDict[i]
             a.state = 2
+            a.data.append((self.t, a.state))
             self.contaminatedAgents.remove(i)
             self.incubatingAgents.append(i)
 
@@ -229,6 +231,7 @@ class Model(object):
         print ' ', i, 'recovered'
         #print self.contactPairs.nodes()
         self.agentDict[i].state = 4
+        a.data.append((self.t,a.state))
         #self.agentDict[i].contamination = 0
         self.infectedAgents.remove(i)
         nBors = self.contactPairs.edges(i)
@@ -254,6 +257,7 @@ class Model(object):
         a = self.agentDict[i]
         if a.state == 1:
             a.state = 0
+            a.data.append((self.t,a.state))
             self.contaminatedAgents.remove(i)
             self.susceptibleAgents.append(i)
             self.update_contact_pairs(i)
@@ -268,6 +272,7 @@ class Model(object):
         f = self.fomiteDict[j]
         if a.state == 0 and f.contamination > 0:
             a.state = 1
+            a.data.append((self.t,a.state))
             self.susceptibleAgents.remove(i)
             self.contaminatedAgents.append(i)
             self.update_contact_pairs(i)
@@ -283,7 +288,8 @@ class Model(object):
         i = pr.choice(self.incubatingAgents)
         print ' ', i, 'developed symptoms'
         a = self.agentDict[i]
-        a.state == 3
+        a.state = 3
+        a.data.append((self.t,a.state))
         self.incubatingAgents.remove(i)
         self.infectedAgents.append(i)
         newPairs = [(i,j) for j in a.neighbors if self.agentDict[j].state in (0,1)]
@@ -307,10 +313,12 @@ class Model(object):
         if a.contamination > 0:
             if a.state == 0:
                 a.state = 1
+                a.data.append((self.t,a.state))
             self.update_contact_pairs(i)
         if b.contamination > 0:
             if b.state == 0:
                 b.state = 1
+                b.data.append((self.t,b.state))
             self.update_contact_pairs(j)
 
     def init_contact_pairs(self):

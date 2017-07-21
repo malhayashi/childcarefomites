@@ -22,7 +22,7 @@ global image2
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
-    global val, w, root, top, mod
+    global val, w, root, top, mod, dummy1, dummy2
     global parameters
     mod = 0
     parameters = {'contactRateHH':0.0, 'contactRateHF':0.0, 'pickupFr':0.0, 'transferFr':0.0, 'faceTouchRate':0.0, 'infProb':0.0, 'washRate':0.0, 'incubationRate':0.0, 'recoveryRate':0.0, 'sheddingRate':0.0, 'shedding':0.0, 'dieOff':0.0, 'deconFreq':None, 'dayLength':0.0}
@@ -36,6 +36,8 @@ def vp_start_gui():
 
 def close():
     #check for extraneous/duplicates
+    dummy1.close()
+    dummy2.close()
     os.remove('fig1.png')
     os.remove('fig2.png')
     root.destroy()

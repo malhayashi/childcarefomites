@@ -230,7 +230,8 @@ class Model(object):
         i = pr.choice(self.infectedAgents)
         print ' ', i, 'recovered'
         #print self.contactPairs.nodes()
-        self.agentDict[i].state = 4
+        a = self.agentDict[i]
+        a.state = 4
         a.data.append((self.t,a.state))
         #self.agentDict[i].contamination = 0
         self.infectedAgents.remove(i)

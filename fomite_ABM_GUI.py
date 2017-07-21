@@ -405,7 +405,7 @@ def but5Press():
         mod = 1
 
 def gen():
-    from fomite_ABM_GUI_v2 import Agent, Fomite
+    from fomite_ABM import Agent, Fomite
 
     ### A bunch of crap to test run the model
     agentList = []

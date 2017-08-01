@@ -18,7 +18,7 @@ def metropolisHastings(distribution, iterations=10**4):
             vec.append(x)
 
     #plot
-    x = arange(-3,3,.1)
+    '''x = arange(-3,3,.1)
     y = distribution(x)
     subplot(211)
     title('Metropolis-Hastings')
@@ -30,7 +30,7 @@ def metropolisHastings(distribution, iterations=10**4):
     ylabel('Frequency')
     xlabel('x')
     legend(('PDF','Samples'))
-    show()
+    show()'''
     return vec
 
 def multiSpatialMC(oracle=False, dimension=2, iterations=10**5):
@@ -63,6 +63,7 @@ def add(listA, listB):
     return temp
 
 def chaosRain(function=0.0, dimension=2, center=[0,0]):
+    #wtf high dimensional brownian motion is a pain in the ass
     pass
 
 
@@ -71,6 +72,14 @@ def monteCarlo(function,iterations=10**4):
     for i in range(0,iterations):
         vals.append(function())
     return sum(vals)/len(vals)
+
+def lagrange_interpolation(node, xvals=(), yvals=()):
+    def _basis(j):
+        p = [(x - x_values[m])/(x_values[j] - x_values[m]) for m in xrange(k) if m != j]
+        return reduce(operator.mul, p)
+    assert len(x_values) != 0 and (len(x_values) == len(y_values)), 'bruh'
+    k = len(x_values)
+    return sum(_basis(j)*y_values[j] for j in xrange(k))
 
 def testmodel():
     psi = numpy.random.normal()
@@ -82,4 +91,4 @@ def testDistribution(X):
 
 if __name__ == '__main__':
     print(monteCarlo(function=lambda: testmodel()))
-    metropolisHastings(distribution=lambda out: testDistribution(out), iterations=10**6)
+    metropolisHastings(distribution=lambda out: testDistribution(out), iterations=10**4)

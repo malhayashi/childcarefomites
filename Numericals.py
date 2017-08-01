@@ -1,4 +1,5 @@
 import numpy
+import operator
 from math import *
 from matplotlib.pylab import *
 
@@ -73,9 +74,9 @@ def monteCarlo(function,iterations=10**4):
         vals.append(function())
     return sum(vals)/len(vals)
 
-def lagrange_interpolation(node, xvals=(), yvals=()):
+def lagrange_interpolation(node, x_values=(), y_values=()):
     def _basis(j):
-        p = [(x - x_values[m])/(x_values[j] - x_values[m]) for m in xrange(k) if m != j]
+        p = [(node - x_values[m])/(x_values[j] - x_values[m]) for m in xrange(k) if m != j]
         return reduce(operator.mul, p)
     assert len(x_values) != 0 and (len(x_values) == len(y_values)), 'bruh'
     k = len(x_values)

@@ -62,7 +62,7 @@ class New_Toplevel_1:
         days = 10
         agents = 20
         top.geometry("1031x593+89+80")
-        top.title('Maize & Blue SIWR v2.0')
+        top.title('Maize & Blue SIWR v2.3')
         top.configure(background="#135bd9")
         top.configure(highlightcolor="black")
         top.configure(cursor='pencil')
@@ -272,6 +272,24 @@ class New_Toplevel_1:
         self.Button4.configure(cursor='crosshair')
         self.Button4.configure(command=lambda: but4Press())
 
+        self.Button6 = Button(top)
+        self.Button6.place(relx=0.02, rely=0.80, height=26, width=322)
+        self.Button6.configure(activebackground="#d9d9d9")
+        self.Button6.configure(background="#d9d938")
+        self.Button6.configure(font=font9)
+        self.Button6.configure(text='''Economic Analysis''')
+        self.Button6.configure(cursor='crosshair')
+        self.Button6.configure(command=lambda: but6Press())
+
+        self.Button7 = Button(top)
+        self.Button7.place(relx=0.02, rely=0.86, height=26, width=322)
+        self.Button7.configure(activebackground="#d9d9d9")
+        self.Button7.configure(background="#d9d938")
+        self.Button7.configure(font=font9)
+        self.Button7.configure(text='''Curve Interpolation''')
+        self.Button7.configure(cursor='crosshair')
+        self.Button7.configure(command=lambda: but7Press())
+
         self.Label2 = Label(top)
         self.Label2.place(relx=0.4, rely=0.03, height=18, width=33)
         self.Label2.configure(activebackground="#f9f9f9")
@@ -406,6 +424,64 @@ def but5Press():
         top.Button5.configure(image=image1)
         mod = 1
 
+def but6Press():
+    #generate economics
+    pass
+
+def but7Press():
+    #polynomial interpolation lagrange
+    from Numericals import lagrange_interpolation
+    from matplotlib.pylab import *
+    print(complete_output)
+    try:
+        discretization_range = arange(0,days-1,.05)
+        incubating_out = []
+        symptomatic_out = []
+        xvals = [x[-1] for x in complete_output]
+        inyvals = [x[2] for x in complete_output]
+        symyvals = [x[3] for x in complete_output]
+        conyvals = [x[4] for x in complete_output]
+        incubating_out = lagrange_interpolation(discretization_range, xvals, inyvals)
+        symptomatic_out = lagrange_interpolation(discretization_range, xvals, symyvals)
+        contamination_out = lagrange_interpolation(discretization_range, xvals, conyvals)
+
+        print(xvals)
+        print(incubating_out)
+        global image1, image2, mod
+        pl.clf()
+
+        pl.plot(discretization_range,symptomatic_out,label='Symptomatic')
+        pl.plot(discretization_range,incubating_out,label='Incubating')
+        pl.legend()
+        pl.ylabel('Population')
+        pl.xlabel('Days')
+        pl.savefig('fig1')
+        pl.plot(discretization_range,contamination_out, label=None)
+        pl.ylabel('Fomite contamination')
+        pl.xlabel('Days')
+        pl.legend().remove()
+        pl.savefig('fig2')
+        pl.clf()
+
+        img = Image.open('fig1.png')
+        img = img.resize((587,486), PIL.Image.ANTIALIAS)
+        img.save('fig1.png')
+
+        img = Image.open('fig2.png')
+        img = img.resize((587,486), PIL.Image.ANTIALIAS)
+        img.save('fig2.png')
+
+        image1 = ImageTk.PhotoImage(file='fig1.png')
+        image2 = ImageTk.PhotoImage(file='fig2.png')
+        mod = 1
+
+        top.Button5.configure(image=image1)
+    except:
+        tkMessageBox.showwarning("Warning!","No Curve to Interpolate!")
+
+def economic_forecast():
+    pass
+
 def gen():
     from fomite_ABM import Agent, Fomite
 
@@ -481,7 +557,9 @@ def gen():
 
     m.run()
 
-    out = np.array(m.output)
+    global complete_output
+    complete_output = m.output
+    out = np.array(complete_output)
     #print out[:,2]
 
     pl.plot(out[:,-1],out[:,3],label='Symptomatic')

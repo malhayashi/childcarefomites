@@ -8,14 +8,14 @@ Files:
 * sickchildcare_parser.py: script to parse surveillance data from M-CRISP network
 
 List of childcare centers:
-* Adventure Center Childcare'
-* Annie\'s Children\'s Center Downtown'
-* Bemis Farm'
-* Bemis Farms 2 (Lincoln)'
-* Childtime Learning Center - Plymouth Road'
-* Community Day Care Inc.'
-* Dorothy\'s Discovery Daycare Center'
-* Gretchen\'s House - Mt. Pleasant'
+* Adventure Center Childcare
+* Annie\'s Children\'s Center Downtown
+* Bemis Farm
+* Bemis Farms 2 (Lincoln)
+* Childtime Learning Center - Plymouth Road
+* Community Day Care Inc.
+* Dorothy\'s Discovery Daycare Center
+* Gretchen\'s House - Mt. Pleasant
 * Foundations Preschool of Washtenaw County
 * Lil\' Saints Preschool
 * Morning Star Child Care

@@ -38,6 +38,7 @@ class Agent(object):
         self.id = id
         self.state = state # 0: S, 1: C, 2: I1, 3: I2, 4: R
         self.contamination = contamination
+        self.day = 0
         self.timestamp = 0
         self.neighbors = neighbors
         self.fomiteNeighbors = []

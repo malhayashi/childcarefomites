@@ -33,6 +33,22 @@ def run_model(m):
     m.run()
     return np.array(m.output)
 
+def run_parallel(agentList, fomiteList, endDay, contactNetwork, param, nRuns):
+    servers = ('local',)
+    jobServer = pp.Server(ppservers=servers)
+    print 'active nodes', jobServer.get_active_nodes()
+    mList = [Model(copy.deepcopy(agentList),copy.deepcopy(fomiteList),endDay,contactNetwork,param) for i in range(nRuns)]
+
+    output = []
+    start = time.time()
+    jobs = [jobServer.submit(run_model,args=(m,),modules=('numpy as np','networkx as nx','random as pr')) for m in mList]
+    for job in jobs:
+        output.append(job())
+    print 'time elapsed', time.time()-start
+
+    output = np.array(output)
+    return output
+
 class Agent(object):
     def __init__(self, id, state=0, contamination=0, neighbors=[], recoverytime=0):
         self.id = id

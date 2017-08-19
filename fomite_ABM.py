@@ -467,6 +467,7 @@ if __name__ == '__main__':
     'deconFreq':1,
     'dayLength':8}
 
+    out = run_parallel(agentList, [fomite,], 14, G, param, 4)
     #print globals()
 
     ### parallelized multiple runs
@@ -507,24 +508,24 @@ if __name__ == '__main__':
     pl.show()
     '''
 
-    days = 14
-    m = Model(agentList,[fomite,],days,G,copy.deepcopy(param))
+    #days = 14
+    #m = Model(agentList,[fomite,],days,G,copy.deepcopy(param))
     #print m.contactPairs.edges()
 
-    m.run()
+    #m.run()
 
-    out = np.array(m.output)
+    #out = np.array(m.output)
     #print out[:,2]
-    pl.plot(out[:,-1],out[:,3],label='Symptomatic')
-    pl.plot(out[:,-1],out[:,2],label='Incubating')
-    pl.legend()
-    pl.ylabel('Population')
-    pl.xlabel('Days')
-    pl.figure()
-    pl.plot(out[:,-1],out[:,4])
-    pl.ylabel('Fomite contamination')
-    pl.xlabel('Days')
-    pl.show()
+    #pl.plot(out[:,-1],out[:,3],label='Symptomatic')
+    #pl.plot(out[:,-1],out[:,2],label='Incubating')
+    #pl.legend()
+    #pl.ylabel('Population')
+    #pl.xlabel('Days')
+    #pl.figure()
+    #pl.plot(out[:,-1],out[:,4])
+    #pl.ylabel('Fomite contamination')
+    #pl.xlabel('Days')
+    #pl.show()
 
     #print 'fomite contamination', m.fomite.contamination
     #for a in m.agentList:

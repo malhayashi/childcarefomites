@@ -42,7 +42,7 @@ def run_parallel(agentList, fomiteList, endDay, contactNetwork, param, nRuns):
 
     output = []
     start = time.time()
-    jobs = [jobServer.submit(run_model,args=(m,),modules=('numpy as np','networkx as nx','random as pr')) for m in mList]
+    jobs = [jobServer.submit(run_model,args=(m,),depfuncs=(timestamp_to_hours,),modules=('numpy as np','networkx as nx','random as pr','datetime as dt')) for m in mList]
     for job in jobs:
         output.append(job())
     print 'time elapsed', time.time()-start
@@ -161,13 +161,13 @@ class Model(object):
             h = 0
             for i in self.agentDict:
                 a = self.agentDict[i]
-                a.timestamp = dt.timestamp(days = 1,hours = h)
+                a.timestamp = dt.timedelta(days = t,hours = h)
                 if a.contamination == 0 and a.state == 1:
                     a.state = 0
                     self.update_contact_pairs(i)
 
             for j in self.fomiteDict:
-                self.fomiteDict[j].timestamp = dt.timestamp(days = 1,hours = h)
+                self.fomiteDict[j].timestamp = dt.timedelta(days = t,hours = h)
             #print self.contactPairs.edges()
             while h < self.dayLength:
                 #print h
@@ -236,7 +236,7 @@ class Model(object):
         i = pr.choice(self.contaminatedAgents)
         a = self.agentDict[i]
         #print ' ', i, 'consumed pathogen'
-        a.pathogen_decay(self.timestamp,self.dieOff)
+        a.pathogen_decay(timestamp_to_hours(self.timestamp),self.dieOff)
         a.timestamp = self.timestamp
         if np.random.random() < a.contamination*self.infProb:
             print ' ', i, 'became infected'
@@ -269,7 +269,7 @@ class Model(object):
         #print a.fomiteNeighbors
         j = pr.choice(a.fomiteNeighbors)
         #print j
-        self.fomiteDict[j].pathogen_decay(self.timestamp,self.dieOff)
+        self.fomiteDict[j].pathogen_decay(timestamp_to_hours(self.timestamp),self.dieOff)
         self.fomiteDict[j].contamination += self.shedding
 
     def wash(self):
@@ -298,7 +298,7 @@ class Model(object):
             self.susceptibleAgents.remove(i)
             self.contaminatedAgents.append(i)
             self.update_contact_pairs(i)
-        t = self.timestamp_to_hours(self.timestamp)
+        t = timestamp_to_hours(self.timestamp)
         a.pathogen_decay(t,self.dieOff)
         f.pathogen_decay(t,self.dieOff)
         pickup = f.contamination*self.pickupFr

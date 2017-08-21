@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import random as pr
 import matplotlib.pyplot as pl
+import datetime as dt
 import pp
 import time
 import copy
@@ -49,32 +50,35 @@ def run_parallel(agentList, fomiteList, endDay, contactNetwork, param, nRuns):
     output = np.array(output)
     return output
 
+def timestamp_to_hours(ts):
+    return ts.total_seconds() / float(3600)
+
 class Agent(object):
     def __init__(self, id, state=0, contamination=0, neighbors=[], recoverytime=0):
         self.id = id
         self.state = state # 0: S, 1: C, 2: I1, 3: I2, 4: R
         self.contamination = contamination
-        self.day = 0
-        self.timestamp = 0
+        #self.day = 0
+        self.timestamp = dt.timedelta()
         self.neighbors = neighbors
         self.fomiteNeighbors = []
         self.recoveryTime = recoverytime
         self.data = [(self.timestamp,self.state),]
 
     def pathogen_decay(self,t,r):
-        x = self.contamination*exp(-r*(t-self.timestamp))
+        x = self.contamination*exp(-r*(t-timestamp_to_hours(self.timestamp)))
         self.contamination = max(x,0)
 
 class Fomite(object):
     def __init__(self, id, contamination=0, neighbors=[], decon=None):
         self.id = id
         self.contamination = contamination
-        self.timestamp = 0
+        self.timestamp = dt.timedelta()
         self.neighbors = neighbors
         self.decon = decon  # Allows arbitrary decontamination schedule functions
 
     def pathogen_decay(self,t,r):
-        x = self.contamination*exp(-r*(t-self.timestamp))
+        x = self.contamination*exp(-r*(t-timestamp_to_hours(self.timestamp)))
         self.contamination = max(x,0)
 
 class Model(object):
@@ -85,7 +89,7 @@ class Model(object):
         ### Initialize rate parameters
         self.fomiteDict = {f.id: f for f in fomites}
         self.tF = endtime
-        self.t = 0
+        self.timestamp = dt.timedelta()
         self.contactNetwork=contactnetwork # people (1,2,3...) and fomites (1f, 2f, 3f,...)
         self.betaHH = param['contactRateHH']
         self.betaHF = param['contactRateHF']
@@ -157,13 +161,13 @@ class Model(object):
             h = 0
             for i in self.agentDict:
                 a = self.agentDict[i]
-                a.timestamp = h
+                a.timestamp = dt.timestamp(days = 1,hours = h)
                 if a.contamination == 0 and a.state == 1:
                     a.state = 0
                     self.update_contact_pairs(i)
 
             for j in self.fomiteDict:
-                self.fomiteDict[j].timestamp = h
+                self.fomiteDict[j].timestamp = dt.timestamp(days = 1,hours = h)
             #print self.contactPairs.edges()
             while h < self.dayLength:
                 #print h
@@ -177,7 +181,7 @@ class Model(object):
                         self.resolve(event)
                         self.update_event_rates()
                         h += dh
-                        self.t += dh
+                        self.timestamp = dt.timedelta(days=t,hours=h)
                     else:
                         break
                 else:
@@ -224,22 +228,22 @@ class Model(object):
 
         self.transfer_contamination(i,j)
 
-        self.agentDict[i].timestamp = self.t
-        self.agentDict[j].timestamp = self.t
+        self.agentDict[i].timestamp = self.timestamp
+        self.agentDict[j].timestamp = self.timestamp
 
     def infect(self):
         #print self.contaminatedAgents
         i = pr.choice(self.contaminatedAgents)
         a = self.agentDict[i]
         #print ' ', i, 'consumed pathogen'
-        a.pathogen_decay(self.t,self.dieOff)
-        a.timestamp = self.t
+        a.pathogen_decay(self.timestamp,self.dieOff)
+        a.timestamp = self.timestamp
         if np.random.random() < a.contamination*self.infProb:
             print ' ', i, 'became infected'
             #print ' ', a.contamination*self.infProb
             a = self.agentDict[i]
             a.state = 2
-            a.data.append((self.t, a.state))
+            a.data.append((self.timestamp, a.state))
             self.contaminatedAgents.remove(i)
             self.incubatingAgents.append(i)
 
@@ -249,7 +253,7 @@ class Model(object):
         #print self.contactPairs.nodes()
         a = self.agentDict[i]
         a.state = 4
-        a.data.append((self.t,a.state))
+        a.data.append((self.timestamp,a.state))
         #self.agentDict[i].contamination = 0
         self.infectedAgents.remove(i)
         nBors = self.contactPairs.edges(i)
@@ -259,13 +263,13 @@ class Model(object):
         i = pr.choice(self.infectedAgents)
         #print ' ', i, 'sheds'
         a = self.agentDict[i]
-        a.pathogen_decay(self.t,self.dieOff)
-        a.timestamp = self.t
+        a.pathogen_decay(timestamp_to_hours(self.timestamp),self.dieOff)
+        a.timestamp = self.timestamp
         a.contamination += self.shedding
         #print a.fomiteNeighbors
         j = pr.choice(a.fomiteNeighbors)
         #print j
-        self.fomiteDict[j].pathogen_decay(self.t,self.dieOff)
+        self.fomiteDict[j].pathogen_decay(self.timestamp,self.dieOff)
         self.fomiteDict[j].contamination += self.shedding
 
     def wash(self):
@@ -275,7 +279,7 @@ class Model(object):
         a = self.agentDict[i]
         if a.state == 1:
             a.state = 0
-            a.data.append((self.t,a.state))
+            a.data.append((self.timestamp,a.state))
             self.contaminatedAgents.remove(i)
             self.susceptibleAgents.append(i)
             self.update_contact_pairs(i)
@@ -290,24 +294,25 @@ class Model(object):
         f = self.fomiteDict[j]
         if a.state == 0 and f.contamination > 0:
             a.state = 1
-            a.data.append((self.t,a.state))
+            a.data.append((self.timestamp,a.state))
             self.susceptibleAgents.remove(i)
             self.contaminatedAgents.append(i)
             self.update_contact_pairs(i)
-        a.pathogen_decay(self.t,self.dieOff)
-        f.pathogen_decay(self.t,self.dieOff)
+        t = self.timestamp_to_hours(self.timestamp)
+        a.pathogen_decay(t,self.dieOff)
+        f.pathogen_decay(t,self.dieOff)
         pickup = f.contamination*self.pickupFr
         a.contamination += pickup
         f.contamination -= pickup
-        a.timestamp = self.t
-        f.timestamp = self.t
+        a.timestamp = self.timestamp
+        f.timestamp = self.timestamp
 
     def present(self):
         i = pr.choice(self.incubatingAgents)
         print ' ', i, 'developed symptoms'
         a = self.agentDict[i]
         a.state = 3
-        a.data.append((self.t,a.state))
+        a.data.append((self.timestamp,a.state))
         self.incubatingAgents.remove(i)
         self.infectedAgents.append(i)
         newPairs = [(i,j) for j in a.neighbors if self.agentDict[j].state in (0,1)]
@@ -316,9 +321,9 @@ class Model(object):
     def transfer_contamination(self,i,j):
         a = self.agentDict[i]
         b = self.agentDict[j]
-
-        a.pathogen_decay(self.t,self.dieOff)
-        b.pathogen_decay(self.t,self.dieOff)
+        t = timestamp_to_hours(self.timestamp)
+        a.pathogen_decay(t,self.dieOff)
+        b.pathogen_decay(t,self.dieOff)
 
         cA = a.contamination
         cB = b.contamination
@@ -331,12 +336,12 @@ class Model(object):
         if a.contamination > 0:
             if a.state == 0:
                 a.state = 1
-                a.data.append((self.t,a.state))
+                a.data.append((self.timestamp,a.state))
             self.update_contact_pairs(i)
         if b.contamination > 0:
             if b.state == 0:
                 b.state = 1
-                b.data.append((self.t,b.state))
+                b.data.append((self.timestamp,b.state))
             self.update_contact_pairs(j)
 
     def init_contact_pairs(self):

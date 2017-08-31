@@ -1,6 +1,10 @@
 from Tkinter import *
 import tkFileDialog
 import tkSimpleDialog
+import matplotlib.pyplot as pl
+import PIL
+from PIL import Image
+from PIL import ImageTk
 
 def vp_start_econgui(host_gui=None):
     '''Starting point when module is the main routine.'''
@@ -71,16 +75,16 @@ class New_Toplevel_1:
         self.Label4.configure(text='''Clinic Cost/day''')
 
         self.Label6 = Label(top)
-        self.Label6.place(relx=0.003, rely=0.23, height=18, width=126)
+        self.Label6.place(relx=-0.003, rely=0.23, height=18, width=126)
         self.Label6.configure(activebackground="#f9f9f9")
         self.Label6.configure(background="#135bd9")
-        self.Label6.configure(text='''SES Mean''')
+        self.Label6.configure(text='''SES Bot''')
 
         self.Label7 = Label(top)
-        self.Label7.place(relx=-0.003, rely=0.27, height=18, width=126)
+        self.Label7.place(relx=-0.017, rely=0.27, height=18, width=126)
         self.Label7.configure(activebackground="#f9f9f9")
         self.Label7.configure(background="#135bd9")
-        self.Label7.configure(text='''SES Variance''')
+        self.Label7.configure(text='''SES Top''')
 
         self.Entry1 = Entry(top)
         self.Entry1.place(relx=0.17, rely=0.03, relheight=0.03, relwidth=0.14)
@@ -169,6 +173,13 @@ class New_Toplevel_1:
         self.Button5.configure(cursor='crosshair')
         self.Button5.configure(command=lambda: but5Press())
 
+        self.Button5 = Button(top)
+        self.Button5.place(relx=0.4, rely=0.12, height=486, width=587)
+        self.Button5.configure(activebackground="#d9d9d9")
+        self.Button5.configure(state=ACTIVE)
+        self.Button5.configure(cursor='exchange')
+        self.Button5.configure(command=lambda: but5Press())
+
     def take(self):
         self.entries = []
         self.entries.append(self.Entry1.get())
@@ -211,9 +222,19 @@ def but2Press():
 def but3Press():
     #model
     from economic_disease_burden import Forecast
+    pl.clf()
     top.take()
     f = Forecast(gui._agents, materials, float(top.entries[0]), float(top.entries[1]), float(top.entries[2]), float(top.entries[3]), .08, float(top.entries[4]), float(top.entries[5]), float(top.entries[6]))
     f.run(len(gui._total))
+    pl.plot(f.running)
+    pl.savefig('fig3')
+    img = Image.open('fig3.png')
+    img = img.resize((587,486), PIL.Image.ANTIALIAS)
+    img.save('fig3.png')
+    image3 = ImageTk.PhotoImage(file='fig3.png')
+    pl.clf()
+    top.Button5.configure(image=image3)
+
 
 def but4Press():
     top.Entry1.delete(0,END)

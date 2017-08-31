@@ -7,34 +7,37 @@ class Forecast(object):
     def __init__(self):
         pass
 
-    def __init__(self, agent_list=(), materials=None, materials_touse=None, absrate=None, labor_hours=0.0, labor_wage=0.0, tuition_rate=0.0, devolvement_rate=0.0, clinic_cost=0.0):
+    def __init__(self, agent_list=(), materials=None, absrate=None, labor_hours=0.0, labor_wage=0.0, tuition_rate=0.0, devolvement_rate=0.0, clinic_cost=0.0, bot=0.0, top=0.0):
         self.agents = agent_list
         self.mats = materials
-        self.materials_touse = materials_touse
         self.absrate = absrate
         self.labor_hours = labor_hours
         self.labor_wage = labor_wage
         self.tuition_rate = tuition_rate
+        self.devolvement_rate = devolvement_rate
         self.clinic_cost = clinic_cost
         self.days = 0
         self.output = []
+        global _bot, _top
+        _bot = bot
+        _top = top
 
     def run(self, days=0):
         self.days = days
         self.running = [0]
         self.gen_metadata(self.agents, self.devolvement_rate)
-        for day in range(0,days):
-            daycost = float(self.materials(self.mats, self.materials_touse) + self.labor(self.absrate, self.labor_hours, self.labor_wage) + self.opportunity_cost(self.tuition_rate, self.clinic_cost, day))
-            previous = running[-1]
+        for day in range(1,days):
+            daycost = float(self.materials(self.mats) + self.labor(self.absrate, self.labor_hours, self.labor_wage) + self.opportunity_cost(self.agents, self.tuition_rate, self.clinic_cost, day))
+            previous = self.running[-1]
             self.running.append(previous + daycost)
+        print(self.running)
 
     def materials(self, mats=None, materials_touse=None):
         total = 0.0
         if mats is not None and isinstance(mats, dict):
-            if materials_touse is not None and isinstance(materials_touse, dict):
-                for unit in materials_touse:
-                    itemcost = mats[unit]*materials_touse[unit]
-                    total += itemcost
+            for k,v in mats.iteritems():
+                itemcost = v[0]*v[1]
+                total += itemcost
         return total
 
     def labor(self, absrate=None, hours=0.0, wage=0.0):
@@ -45,43 +48,49 @@ class Forecast(object):
 
     def gen_metadata(self, agents, devolvement_rate=0.0):
         global kid_data, householdSize
+        kid_data = {}
         from fomite_ABM import Agent, Model
         from household_model import HouseholdModel
-        from Numericals import Numericals
+        from Numericals import range_sampler
         for i in agents:
-            sickdays = 0
-            metadata = {'sick_days': 0, 'ses':0.0, 'is_hos':False, 'house':[]}
-            for j in i.data:
-                if j[1] == 1:
-                    sickdays+=1
-            metadata['sick_days'] = sickdays
+            metadata = {'ses':0.0, 'is_hos':False, 'house':[]}
             choice = np.random.uniform(0,1.0)
-            if devolvement_rate < choice:
+            if choice < devolvement_rate:
                 metadata['is_hos'] = True
             householdSize = 4
             temp = Agent(1,2)
-            param = {'contactRateHH': 0.1, 'incubationRate': 1/float(24), 'recoveryRate': 1/float(3*24), 'dayLength': 16, 'numDays': days}
+            param = {'contactRateHH': 0.1, 'incubationRate': 1/float(24), 'recoveryRate': 1/float(3*24), 'dayLength': 16, 'numDays': self.days}
             m = HouseholdModel(temp,householdSize,1,param)
+            m.run()
             metadata['house'] = m.output
             kid_data[i] = metadata
-        ses_list = metropolisHastings(distribution=lambda X: socioeconomic_clustering(X, 100000, 100), iterations=len(agents))
-        for k,v in kid_data:
+        ses_list = range_sampler(_bot,_top,len(agents))
+        print(kid_data)
+        for child in agents:
+            v = kid_data.get(child)
             v['ses'] = random.choice(ses_list)
+        print(kid_data)
 
-    def opportunity_cost(self, tuition_rate=0.0, clinic_cost=0.0, day=0):
+    def opportunity_cost(self, agents, tuition_rate=0.0, clinic_cost=0.0, day=0):
         daycost = 0.0
-        for k,v in kid_data:
-            for index in k.data:
-                if index[0] == day and index[1] == 3:
+        for child in agents:
+            for index in child.data:
+                t = int(index[0]/(8))
+                print(t)
+                if t == day and index[1] == 3:
                     daycost += tuition_rate
-                    v['sick_days'] -= 1
-                    if v['is_hos']:
+                    temp = 0
+                    if kid_data[child]['is_hos']:
+                        print('child is hospitalized')
                         daycost += clinic_cost
-                    daycost += float(v['house'].pop(0)[2]/householdSize*v['ses'])
+                    print(kid_data[child]['house'].pop(0))
+                    daycost += temp*kid_data[child]['ses']/365.0
         return daycost
 
-    def socioeconomic_clustering(X, mean, variance):
-        return 1.0/sqrt(2*variance*pi)*exp(-(X-mean)**2/(2*variance))
+def socioeconomic_clustering(X):
+    val = 1.0/sqrt(2*variance*pi)*exp(-(X-mu)**2/(2*variance))
+    print(val)
+    return val
 
 def test():
     mat = {'clorox':10.0, 'H2O2':20.50}

@@ -50,6 +50,20 @@ def run_parallel(agentList, fomiteList, endDay, contactNetwork, param, nRuns):
     output = np.array(output)
     return output
 
+def process_agent_data(agentDict):
+    dataDict = {}
+    for id in agentDict.keys():
+        a = agentDict[id]
+        for x in a.data:
+            timestamp = x[0]
+            state = x[1]
+            if timestamp in dataDict.keys():
+                dataDict[timestamp][state] += 1
+            else:
+                dataDict[timestamp] = [0,0,0,0,0]
+                dataDict[timestamp][state] += 1
+    print dataDict
+
 def timestamp_to_hours(ts):
     return ts.total_seconds() / float(3600)
 
@@ -445,6 +459,7 @@ if __name__ == '__main__':
     for i in range(nAgents):
         agentList.append(Agent(id=i))
     agentList[1].state = 3
+    agentList[1].data[0] = (dt.timedelta(),3)
     #agentList[1].recoveryTime = 7
     agentList[1].contamination = 500
     ## This matrix assumes one fomite that everybody touches
@@ -472,7 +487,11 @@ if __name__ == '__main__':
     'deconFreq':1,
     'dayLength':8}
 
-    out = run_parallel(agentList, [fomite,], 14, G, param, 4)
+    #out = run_parallel(agentList, [fomite,], 14, G, param, 4)
+    m = Model(agentList,[fomite,],14,G,param)
+    m.run()
+
+    process_agent_data(m.agentDict)
     #print globals()
 
     ### parallelized multiple runs

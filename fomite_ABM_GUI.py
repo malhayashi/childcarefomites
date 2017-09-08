@@ -22,7 +22,7 @@ global image2
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
-    global val, w, root, top, mod, dummy1, dummy2
+    global val, w, root, top, mod, dummy1, dummy2, dummy3, dummy4
     global parameters
     mod = 0
     parameters = {'contactRateHH':0.0, 'contactRateHF':0.0, 'pickupFr':0.0, 'transferFr':0.0, 'faceTouchRate':0.0, 'infProb':0.0, 'washRate':0.0, 'incubationRate':0.0, 'recoveryRate':0.0, 'sheddingRate':0.0, 'shedding':0.0, 'dieOff':0.0, 'deconFreq':None, 'dayLength':0.0}
@@ -31,6 +31,8 @@ def vp_start_gui():
     root.protocol('WM_DELETE_WINDOW',lambda: close())
     dummy1 = open('fig1.png', 'w')
     dummy2 = open('fig2.png', 'w')
+    dummy3 = open('fig3.png', 'w')
+    dummy4 = open('fig4.png', 'w')
     root.resizable(width=False, height=False)
     root.mainloop()
 
@@ -38,8 +40,12 @@ def close():
     #check for extraneous/duplicates
     dummy1.close()
     dummy2.close()
+    dummy3.close()
+    dummy4.close()
     os.remove('fig1.png')
     os.remove('fig2.png')
+    os.remove('fig3.png')
+    os.remove('fig4.png')
     root.destroy()
 
 class New_Toplevel_1:
@@ -342,6 +348,7 @@ class New_Toplevel_1:
         self.entries.append(self.Entry14.get())
         days = int(self.Entry15.get())
         agents = int(self.Entry16.get())
+
     def give(self, vals=[]):
         print(vals)
         self.Entry1.insert(0,vals[0])
@@ -359,6 +366,10 @@ class New_Toplevel_1:
         self.Entry13.insert(0,vals[12])
         self.Entry14.insert(0,vals[13])
 
+    def _set_out(self, val, agents):
+        self._total = val
+        self._agents = agents
+
 def but1Press():
     dialog = tkSimpleDialog.askstring('SIWR Input', 'Input a file name:')
     dialog += '.siwr'
@@ -375,29 +386,28 @@ def but2Press():
     top.give(params)
 
 def but3Press():
-    try:
-        global parameters
-        top.take()
-        parameters['contactRateHH'] = float(top.entries[0])
-        parameters['contactRateHF'] = float(top.entries[1])
-        parameters['pickupFr'] = float(top.entries[2])
-        parameters['transferFr'] = float(top.entries[3])
-        parameters['faceTouchRate'] = float(top.entries[4])
-        parameters['infProb'] = float(top.entries[5])
-        parameters['washRate'] = float(top.entries[6])
-        parameters['incubationRate'] = float(top.entries[7])
-        parameters['recoveryRate'] = float(top.entries[8])
-        parameters['sheddingRate'] = float(top.entries[9])
-        parameters['shedding'] = float(top.entries[10])
-        parameters['dieOff'] = float(top.entries[11])
-        if(float(top.entries[12]) != 0):
-            parameters['deconFreq'] = float(top.entries[12])
-        else:
-            parameters['deconFreq'] = None
-        parameters['dayLength'] = float(top.entries[13])
-        gen()
-    except:
-        tkMessageBox.showwarning("Warning!","Unfilled Parameters!")
+    global parameters
+    top.take()
+    parameters['contactRateHH'] = float(top.entries[0])
+    parameters['contactRateHF'] = float(top.entries[1])
+    parameters['pickupFr'] = float(top.entries[2])
+    parameters['transferFr'] = float(top.entries[3])
+    parameters['faceTouchRate'] = float(top.entries[4])
+    parameters['infProb'] = float(top.entries[5])
+    parameters['washRate'] = float(top.entries[6])
+    parameters['incubationRate'] = float(top.entries[7])
+    parameters['recoveryRate'] = float(top.entries[8])
+    parameters['sheddingRate'] = float(top.entries[9])
+    parameters['shedding'] = float(top.entries[10])
+    parameters['dieOff'] = float(top.entries[11])
+    if(float(top.entries[12]) != 0):
+        parameters['deconFreq'] = float(top.entries[12])
+    else:
+        parameters['deconFreq'] = None
+    parameters['dayLength'] = float(top.entries[13])
+    gen()
+    '''except:
+        tkMessageBox.showwarning("Warning!","Unfilled Parameters!")'''
 
 def but4Press():
     top.Entry1.delete(0,END)
@@ -425,16 +435,15 @@ def but5Press():
         mod = 1
 
 def but6Press():
-    #generate economics
-    pass
+    from fomite_ABM_econGUI import vp_start_econgui
+    vp_start_econgui(top)
 
 def but7Press():
     #polynomial interpolation lagrange
     from Numericals import lagrange_interpolation
-    from matplotlib.pylab import *
-    print(complete_output)
+    from matplotlib.pylab import arange
     try:
-        discretization_range = arange(0,days-1,.05)
+        discretization_range = arange(0,days-1,.01)
         incubating_out = []
         symptomatic_out = []
         xvals = [x[-1] for x in complete_output]
@@ -478,9 +487,6 @@ def but7Press():
         top.Button5.configure(image=image1)
     except:
         tkMessageBox.showwarning("Warning!","No Curve to Interpolate!")
-
-def economic_forecast():
-    pass
 
 def gen():
     from fomite_ABM import Agent, Fomite
@@ -559,6 +565,8 @@ def gen():
 
     global complete_output
     complete_output = m.output
+    #safe copy by value NOT reference
+    top._set_out(complete_output, agentList)
     out = np.array(complete_output)
     #print out[:,2]
 

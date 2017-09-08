@@ -10,7 +10,7 @@ def vp_start_econgui(host_gui=None):
     '''Starting point when module is the main routine.'''
     global top, root, gui
     gui = host_gui
-    root = Tk()
+    root = Toplevel()
     top = New_Toplevel_1 (root)
     root.resizable(width=False, height=False)
     root.mainloop()
@@ -173,12 +173,11 @@ class New_Toplevel_1:
         self.Button5.configure(cursor='crosshair')
         self.Button5.configure(command=lambda: but5Press())
 
-        self.Button5 = Button(top)
-        self.Button5.place(relx=0.4, rely=0.12, height=486, width=587)
-        self.Button5.configure(activebackground="#d9d9d9")
-        self.Button5.configure(state=ACTIVE)
-        self.Button5.configure(cursor='exchange')
-        self.Button5.configure(command=lambda: but5Press())
+        self.Button6 = Button(top)
+        self.Button6.place(relx=0.4, rely=0.12, height=486, width=587)
+        self.Button6.configure(activebackground="#d9d9d9")
+        self.Button6.configure(cursor='exchange')
+        self.Button6.configure(command=lambda: but6Press())
 
     def take(self):
         self.entries = []
@@ -221,20 +220,36 @@ def but2Press():
 
 def but3Press():
     #model
+    global top, image3, image4, mod
     from economic_disease_burden import Forecast
     pl.clf()
     top.take()
     f = Forecast(gui._agents, materials, float(top.entries[0]), float(top.entries[1]), float(top.entries[2]), float(top.entries[3]), .08, float(top.entries[4]), float(top.entries[5]), float(top.entries[6]))
-    f.run(len(gui._total))
-    pl.plot(f.running)
+    f.run(len(gui._total), gui.entries[13])
+    pl.plot(f.running, label='Aggregate Impact')
+    pl.legend()
+    pl.ylabel('USD ($)')
+    pl.xlabel('Days')
     pl.savefig('fig3')
+    pl.clf()
+    pl.plot(f.daily, label='Daily Impact')
+    pl.legend()
+    pl.ylabel('USD ($)')
+    pl.xlabel('Days')
+    pl.savefig('fig4')
     img = Image.open('fig3.png')
     img = img.resize((587,486), PIL.Image.ANTIALIAS)
     img.save('fig3.png')
-    image3 = ImageTk.PhotoImage(file='fig3.png')
-    pl.clf()
-    top.Button5.configure(image=image3)
 
+    img = Image.open('fig4.png')
+    img = img.resize((587,486), PIL.Image.ANTIALIAS)
+    img.save('fig4.png')
+
+    image3 = ImageTk.PhotoImage(file='fig3.png')
+    image4 = ImageTk.PhotoImage(file='fig4.png')
+    top.Button6.configure(image=image3)
+    mod = 1
+    pl.clf()
 
 def but4Press():
     top.Entry1.delete(0,END)
@@ -257,6 +272,15 @@ def but5Press():
         out.write(' ')
         out.write(prop)
         out.write(' ')
+def but6Press():
+    global mod
+    if mod == 1:
+        top.Button6.configure(image=image4)
+        mod = 2
+    elif mod == 2:
+        top.Button6.configure(image=image3)
+        mod = 1
+
 
 if __name__ == '__main__':
     vp_start_econgui()

@@ -4,7 +4,7 @@ from math import *
 from matplotlib.pylab import *
 
 def metropolisHastings(distribution, iterations=10**4):
-    n = iterations
+    '''n = iterations
     alpha = 1
     x = 0.
     vec = []
@@ -19,7 +19,7 @@ def metropolisHastings(distribution, iterations=10**4):
             vec.append(x)
 
     #plot
-    '''x = arange(-3,3,.1)
+    x = arange(-3,3,.1)
     y = distribution(x)
     subplot(211)
     title('Metropolis-Hastings')
@@ -32,7 +32,7 @@ def metropolisHastings(distribution, iterations=10**4):
     xlabel('x')
     legend(('PDF','Samples'))
     show()'''
-    return vec
+    return [123920,3129329]
 
 def multiSpatialMC(oracle=False, dimension=2, iterations=10**5):
     oldPoint = []
@@ -82,6 +82,12 @@ def lagrange_interpolation(node, x_values=(), y_values=()):
     k = len(x_values)
     return sum(_basis(j)*y_values[j] for j in xrange(k))
 
+def range_sampler(bot, top, iterations):
+    vec = []
+    for i in range(0,iterations):
+        vec.append(numpy.random.uniform(bot,top))
+    return vec
+
 def testmodel():
     psi = numpy.random.normal()
     #psi = 1
@@ -92,4 +98,5 @@ def testDistribution(X):
 
 if __name__ == '__main__':
     print(monteCarlo(function=lambda: testmodel()))
-    metropolisHastings(distribution=lambda out: testDistribution(out), iterations=10**4)
+    metropolisHastings(distribution=lambda out: testDistribution(out))
+    print(range_sampler(0,100,1000))

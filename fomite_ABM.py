@@ -447,6 +447,22 @@ class Model(object):
             'symptom presentation': self.present
         }
         dispatch[event]()
+
+    def compile_output(self):
+        out = {}
+        for i in self.agentDict.keys():
+            a = self.agentDict[i]
+            for entry in a.data:
+                outRow = [0,0,0,0,0]
+                
+                time = entry[0].total_seconds()/float(3600*24)
+                if time in out.keys():
+                    out[time][entry[1]] += 1
+                else:
+                    outRow[entry[1]] = 1
+                    out[time] = outRow
+            
+        self.output = [[k,]+out[k] for k in sorted(out)]
         
 if __name__ == '__main__':
     from fomite_ABM import Agent, Fomite

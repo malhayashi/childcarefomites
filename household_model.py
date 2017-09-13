@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import random as pr
 import matplotlib.pyplot as pl
+import datetime as dt
 import pp
 import time
 import copy
@@ -26,8 +27,7 @@ class HouseholdModel(object):
         self.N = householdsize
         self.id = householdid
         ### Initialize rate parameters
-        self.tF = param['numDays']
-        self.t = 0
+        self.timestamp = dt.timedelta()
         self.betaHH = param['contactRateHH']        
         self.incubationRate = param['incubationRate']
         self.recoveryRate = param['recoveryRate']
@@ -56,32 +56,21 @@ class HouseholdModel(object):
         print self.susceptibleAgents
 
     def run(self):
-        for t in xrange(self.tF):
-            self.output.append([len(self.susceptibleAgents),len(self.incubatingAgents),len(self.infectedAgents), self.t])
-            h = 0
-            for i in self.agentDict:
-                a = self.agentDict[i]
-                a.timestamp = h
-                if a.contamination == 0 and a.state == 1:
-                    a.state = 0
-                    self.update_contact_pairs(i)
+        tF = self.child.recoveryTime.total_seconds()/float(3600)
+        t = 0
+        while t < tF:
+            if self.totalRate == 0:
+                break
+            else:
+                dh = self.draw_event_time()
+                event = self.draw_event()
+                print event
+                self.resolve(event)
+                self.update_event_rates()
+                t += dh
+                self.timestamp = dt.timedelta(hours=t)
 
-            while h < self.dayLength:
-
-                if self.totalRate > 0:
-                    dh = self.draw_event_time()
-                    if dh < self.dayLength - h:
-                        event = self.draw_event()
-                        print event
-                        self.resolve(event)
-                        self.update_event_rates()
-                        h += dh
-                        self.t += dh
-                    else:
-                        break
-                else:
-                    break
-            self.t = t
+        self.compile_output()
 
     def draw_event_time(self):
         return np.random.exponential(scale=1/float(self.totalRate))
@@ -98,27 +87,32 @@ class HouseholdModel(object):
     def contact(self):
         #print self.susceptibleAgents
         j = pr.choice(self.susceptibleAgents)
-
-        self.agentDict[j].state == 2
+        a = self.agentDict[j]
+        a.state = 2
         self.susceptibleAgents.remove(j)
         self.incubatingAgents.append(j)
-
-        self.child.timestamp = self.t
-        self.agentDict[j].timestamp = self.t
+        self.child.timestamp = self.timestamp
+        a.timestamp = self.timestamp
+        a.data.append((self.timestamp,a.state))
 
     def present(self):
         i = pr.choice(self.incubatingAgents)
         #print ' ', i, 'developed symptoms'
         a = self.agentDict[i]
-        a.state == 3
+        a.state = 3
         self.incubatingAgents.remove(i)
         self.infectedAgents.append(i)
+        a.timestamp = self.timestamp
+        a.data.append((self.timestamp,a.state))
 
     def recover(self):
         i = pr.choice(self.infectedAgents)
         #print ' ', i, 'recovered'
-        self.agentDict[i].state = 4
+        a = self.agentDict[i]
+        a.state = 4
         self.infectedAgents.remove(i)
+        a.timestamp = self.timestamp
+        a.data.append((self.timestamp,a.state))
 
     def initialize_household(self):
         for i in xrange(self.N-1):
@@ -144,8 +138,24 @@ class HouseholdModel(object):
         }
         dispatch[event]()
 
+    def compile_output(self):
+        out = {}
+        for i in self.agentDict.keys():
+            a = self.agentDict[i]
+            for entry in a.data:
+                outRow = [0,0,0,0,0]
+                
+                time = entry[0].total_seconds()/float(3600*24)
+                if time in out.keys():
+                    out[time][entry[1]] += 1
+                else:
+                    outRow[entry[1]] = 1
+                    out[time] = outRow
+            
+        self.output = [[k,]+out[k] for k in sorted(out)] 
+
 if __name__ == '__main__':
-    c = Agent(1,2)
+    c = Agent(1,2,recoverytime=dt.timedelta(days=5))
     householdSize = 4
     param = {'contactRateHH': 0.1, 'incubationRate': 1/float(24), 'recoveryRate': 1/float(3*24), 'dayLength': 16, 'numDays': 7}
     m = HouseholdModel(c,householdSize,1,param)

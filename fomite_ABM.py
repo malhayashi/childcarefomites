@@ -470,7 +470,7 @@ if __name__ == '__main__':
     ### A bunch of crap to test run the model
     agentList = []
     fomite = Fomite(id='1f')
-    nAgents = 10
+    nAgents = 30
     dayLength = 8
     for i in range(nAgents):
         agentList.append(Agent(id=i))
@@ -503,11 +503,11 @@ if __name__ == '__main__':
     'deconFreq':1,
     'dayLength':8}
 
-    #out = run_parallel(agentList, [fomite,], 14, G, param, 4)
-    m = Model(agentList,[fomite,],14,G,param)
-    m.run()
+    output = run_parallel(agentList, [fomite,], 14, G, param, 100)
+    #m = Model(agentList,[fomite,],14,G,param)
+    #m.run()
 
-    process_agent_data(m.agentDict)
+    #process_agent_data(m.agentDict)
     #print globals()
 
     ### parallelized multiple runs
@@ -523,8 +523,8 @@ if __name__ == '__main__':
     for job in jobs:
         output.append(job())
     print 'time elapsed', time.time()-start
-
-    output = np.array(output)
+    '''
+    #output = np.array(output)
     avgOutput = np.mean(output,axis=0)
     stdOutput = np.std(output,axis=0)
 
@@ -546,7 +546,7 @@ if __name__ == '__main__':
     pl.xlabel('Days')
     pl.ylim(ymin=0)
     pl.show()
-    '''
+    
 
     #days = 14
     #m = Model(agentList,[fomite,],days,G,copy.deepcopy(param))

@@ -169,10 +169,13 @@ if __name__ == '__main__':
     householdSize = 4
     param = {'contactRateHH': 0.1, 'incubationRate': 1/float(24), 'recoveryRate': 1/float(3*24), 'dayLength': 16, 'numDays': 7}
 
+    outData = []
     id = 0
     for child in childList:
         m = HouseholdModel(child,householdSize,id,param)
         m.run()
         data = np.array(m.output)
-        print np.sum(data[:,3])
+        outData.append(np.sum(data[:,3]))
         id += 1
+    print np.mean(outData)
+    print np.std(outData)

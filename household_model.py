@@ -53,7 +53,7 @@ class HouseholdModel(object):
         # Incubating agents develop symptoms
         self.events['symptom presentation'] = self.incubationRate*len(self.incubatingAgents)
         self.totalRate = np.sum(self.events.values())
-        print self.susceptibleAgents
+        #print self.susceptibleAgents
 
     def run(self):
         tF = self.child.recoveryTime.total_seconds()/float(3600)
@@ -64,7 +64,7 @@ class HouseholdModel(object):
             else:
                 dh = self.draw_event_time()
                 event = self.draw_event()
-                print event
+                #print event
                 self.resolve(event)
                 self.update_event_rates()
                 t += dh
@@ -155,10 +155,24 @@ class HouseholdModel(object):
         self.output = [[k,]+out[k] for k in sorted(out)] 
 
 if __name__ == '__main__':
+    from sickchildcare_parser import *
+    '''
     c = Agent(1,2,recoverytime=dt.timedelta(days=5))
     householdSize = 4
     param = {'contactRateHH': 0.1, 'incubationRate': 1/float(24), 'recoveryRate': 1/float(3*24), 'dayLength': 16, 'numDays': 7}
     m = HouseholdModel(c,householdSize,1,param)
     m.run()
-
+    
     print m.output
+    '''
+    childList = cases_to_agents('data_export.tsv','all','e',1/float(3))
+    householdSize = 4
+    param = {'contactRateHH': 0.1, 'incubationRate': 1/float(24), 'recoveryRate': 1/float(3*24), 'dayLength': 16, 'numDays': 7}
+
+    id = 0
+    for child in childList:
+        m = HouseholdModel(child,householdSize,id,param)
+        m.run()
+        data = np.array(m.output)
+        print np.sum(data[:,3])
+        id += 1

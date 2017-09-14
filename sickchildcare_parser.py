@@ -29,11 +29,14 @@ def cases_to_agents(fName, centerName, caseType, recoveryRate):
     dummyId = 0
     for date in sorted(data):
         numCases = data[date]
-        relDate = (date-firstDate).days
-        
+        #relDate = (date-firstDate).days
+        relDate = date - firstDate
+        #print relDate
         while numCases > 0:
-            newCase = Agent(id=dummyId,state=3,recoverytime=exponential(1/float(recoveryRate)))
-            newCase.day = relDate
+            recover = dt.timedelta(days=exponential(1/float(recoveryRate)))
+            newCase = Agent(id=dummyId,state=3,recoverytime=recover)
+            print newCase.recoveryTime
+            newCase.timestamp = relDate
             agentList.append(newCase)
             dummyId += 1
             numCases -= 1
@@ -94,6 +97,7 @@ def parse_cases(fName, centerName, caseType):
                 testCenter = line[1].translate(None,'-\' ').lower()
             #print testCenter
             #print [line[col] for col in cols]
+            #print line
             testDisease = sum([int(line[col]) for col in cols])
             if testDisease > 0:
                 if center == testCenter:
@@ -108,6 +112,6 @@ def parse_cases(fName, centerName, caseType):
 
 if __name__ == '__main__':
     ### Test code -- change directory as needed
-    cases_to_agents(os.path.join('C:/','Users','Michael','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e',5)
+    cases_to_agents(os.path.join('C:/','Users','Michael','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e',1/float(5))
         
 

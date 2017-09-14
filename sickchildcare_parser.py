@@ -35,7 +35,7 @@ def cases_to_agents(fName, centerName, caseType, recoveryRate):
         while numCases > 0:
             recover = dt.timedelta(days=exponential(1/float(recoveryRate)))
             newCase = Agent(id=dummyId,state=3,recoverytime=recover)
-            print newCase.recoveryTime
+            #print newCase.recoveryTime
             newCase.timestamp = relDate
             agentList.append(newCase)
             dummyId += 1

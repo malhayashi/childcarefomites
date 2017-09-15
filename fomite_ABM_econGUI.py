@@ -1,6 +1,7 @@
 from Tkinter import *
 import tkFileDialog
 import tkSimpleDialog
+import tkMessageBox
 import matplotlib.pyplot as pl
 import PIL
 from PIL import Image
@@ -216,16 +217,59 @@ def but1Press():
     top.Button1.configure(background='#135bd9')
 
 def but2Press():
-    pass
+    #interpolate economic output data
+    from Numericals import lagrange_interpolation
+    from matplotlib.pylab import arange
+    try:
+        discretization_range = arange(0,len(_complete_out)-1,.01)
+        incubating_out = []
+        symptomatic_out = []
+        xvals = [x for x in range(0,len(_complete_out))]
+        aggyvals = [x[0] for x in _complete_out]
+        dailyvals = [x[1] for x in _complete_out]
+        agg_out = lagrange_interpolation(discretization_range, xvals, aggyvals)
+        daily_out = lagrange_interpolation(discretization_range, xvals, dailyvals)
+
+        global image3, image4, mod
+        pl.clf()
+
+        pl.plot(agg_out, label='Aggregate Impact')
+        pl.legend()
+        pl.ylabel('USD ($)')
+        pl.xlabel('Days')
+        pl.savefig('fig3')
+        pl.clf()
+        pl.plot(daily_out, label='Daily Impact')
+        pl.legend()
+        pl.ylabel('USD ($)')
+        pl.xlabel('Days')
+        pl.savefig('fig4')
+
+        img = Image.open('fig3.png')
+        img = img.resize((587,486), PIL.Image.ANTIALIAS)
+        img.save('fig3.png')
+
+        img = Image.open('fig4.png')
+        img = img.resize((587,486), PIL.Image.ANTIALIAS)
+        img.save('fig4.png')
+
+        image3 = ImageTk.PhotoImage(file='fig3.png')
+        image4 = ImageTk.PhotoImage(file='fig4.png')
+        mod = 1
+
+        top.Button6.configure(image=image3)
+    except:
+        tkMessageBox.showwarning("Warning!","No Curve to Interpolate!")
 
 def but3Press():
     #model
-    global top, image3, image4, mod
+    global top, image3, image4, mod, _complete_out
     from economic_disease_burden import Forecast
     pl.clf()
     top.take()
     f = Forecast(gui._agents, materials, float(top.entries[0]), float(top.entries[1]), float(top.entries[2]), float(top.entries[3]), .08, float(top.entries[4]), float(top.entries[5]), float(top.entries[6]))
     f.run(len(gui._total), gui.entries[13])
+    _complete_out = f.output
     pl.plot(f.running, label='Aggregate Impact')
     pl.legend()
     pl.ylabel('USD ($)')

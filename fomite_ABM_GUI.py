@@ -68,7 +68,7 @@ class New_Toplevel_1:
         days = 10
         agents = 20
         top.geometry("1031x593+89+80")
-        top.title('Maize & Blue SIWR v2.3')
+        top.title('Maize & Blue SIWR v2.11')
         top.configure(background="#135bd9")
         top.configure(highlightcolor="black")
         top.configure(cursor='pencil')
@@ -296,6 +296,15 @@ class New_Toplevel_1:
         self.Button7.configure(cursor='crosshair')
         self.Button7.configure(command=lambda: but7Press())
 
+        self.Button8 = Button(top)
+        self.Button8.place(relx=0.02, rely=0.92, height=26, width=322)
+        self.Button8.configure(activebackground="#d9d9d9")
+        self.Button8.configure(background="#d9d938")
+        self.Button8.configure(font=font9)
+        self.Button8.configure(text='''Oppa Gangnam Style''')
+        self.Button8.configure(cursor='crosshair')
+        self.Button8.configure(command=lambda: but8Press())
+
         self.Label2 = Label(top)
         self.Label2.place(relx=0.4, rely=0.03, height=18, width=33)
         self.Label2.configure(activebackground="#f9f9f9")
@@ -487,6 +496,16 @@ def but7Press():
         top.Button5.configure(image=image1)
     except:
         tkMessageBox.showwarning("Warning!","No Curve to Interpolate!")
+
+def but8Press():
+    print('gangnam style')
+    #retrieve TSV and integrate to model
+    name = tkFileDialog.askopenfilename()
+    from sickchildcare_parser import cases_to_agents
+    agents = cases_to_agents(name, 'all', 'e', 5)
+    print(agents)
+    for i in agents:
+        print(i.data)
 
 def gen():
     from fomite_ABM import Agent, Fomite

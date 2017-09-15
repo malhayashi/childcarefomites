@@ -37,6 +37,7 @@ def cases_to_agents(fName, centerName, caseType, recoveryRate):
             newCase = Agent(id=dummyId,state=3,recoverytime=recover)
             #print newCase.recoveryTime
             newCase.timestamp = relDate
+            newCase.data.append((relDate,3))
             agentList.append(newCase)
             dummyId += 1
             numCases -= 1

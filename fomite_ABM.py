@@ -536,7 +536,7 @@ if __name__ == '__main__':
     pl.plot(days,avgOutput[:,2],'g',lw=4,label='Incubating')
     pl.fill_between(days,lowerBound[:,2],upperBound[:,2],facecolor='g',lw=0,alpha=0.5)
     pl.legend(loc=0)
-    pl.ylabel('Symptomatic')
+    pl.ylabel('Incidence')
     pl.xlabel('Days')
     pl.ylim(ymin=0)
     pl.figure()
@@ -545,6 +545,7 @@ if __name__ == '__main__':
     pl.ylabel('Fomite contamination')
     pl.xlabel('Days')
     pl.ylim(ymin=0)
+    pl.savefig('example_simulations.png',dpi=300)
     pl.show()
     
 

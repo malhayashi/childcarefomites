@@ -9,12 +9,12 @@ import pandas as pd
 #center = raw_input('Center name: ').translate(None,'-\' ').lower()
 
 def write_inc_csv(fName, centerName, caseType):
-    data = parse_cases(fName, centerName, caseType)
+    dataDict = parse_cases(fName, centerName, caseType)
 
-    if len(dateDict.items()) > 0:
-        data = pd.DataFrame(sorted(dateDict.items()),columns=['date','cases'])
+    if len(dataDict.items()) > 0:
+        data = pd.DataFrame(sorted(dataDict.items()),columns=['date','cases'])
         
-        data.to_csv(center+'_'+disease+'.csv')
+        data.to_csv(centerName+'_'+caseType+'.csv')
         #print data
     else:
         print 'no cases for this center'
@@ -113,6 +113,6 @@ def parse_cases(fName, centerName, caseType):
 
 if __name__ == '__main__':
     ### Test code -- change directory as needed
-    cases_to_agents(os.path.join('C:/','Users','Michael','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e',1/float(5))
-        
+    #cases_to_agents(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e',1/float(5))
+    write_inc_csv(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','r')    
 

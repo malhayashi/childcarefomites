@@ -8,6 +8,7 @@ import time
 import copy
 import sys
 import os
+import matplotlib
 from Tkinter import *
 import tkFileDialog
 import tkSimpleDialog
@@ -166,7 +167,7 @@ class Model(object):
         for t in xrange(self.tF):
             #print 'day', t, len(self.infectedAgents), 'infected'
             self.output.append([len(self.susceptibleAgents),len(self.contaminatedAgents),len(self.incubatingAgents),len(self.infectedAgents),sum([self.fomiteDict[i].contamination for i in self.fomiteDict]), t])
-            print t
+            #print t
             if self.deconFreq is not None:
                 if not t%self.deconFreq:
                     for fId in self.fomiteDict:
@@ -253,7 +254,7 @@ class Model(object):
         a.pathogen_decay(timestamp_to_hours(self.timestamp),self.dieOff)
         a.timestamp = self.timestamp
         if np.random.random() < a.contamination*self.infProb:
-            print ' ', i, 'became infected'
+            #print ' ', i, 'became infected'
             #print ' ', a.contamination*self.infProb
             a = self.agentDict[i]
             a.state = 2
@@ -263,7 +264,7 @@ class Model(object):
 
     def recover(self):
         i = pr.choice(self.infectedAgents)
-        print ' ', i, 'recovered'
+        #print ' ', i, 'recovered'
         #print self.contactPairs.nodes()
         a = self.agentDict[i]
         a.state = 4
@@ -323,7 +324,7 @@ class Model(object):
 
     def present(self):
         i = pr.choice(self.incubatingAgents)
-        print ' ', i, 'developed symptoms'
+        #print ' ', i, 'developed symptoms'
         a = self.agentDict[i]
         a.state = 3
         a.data.append((self.timestamp,a.state))
@@ -503,7 +504,7 @@ if __name__ == '__main__':
     'deconFreq':1,
     'dayLength':8}
 
-    output = run_parallel(agentList, [fomite,], 14, G, param, 100)
+    output = run_parallel(agentList, [fomite,], 21, G, param, 100)
     #m = Model(agentList,[fomite,],14,G,param)
     #m.run()
 
@@ -531,6 +532,12 @@ if __name__ == '__main__':
     upperBound = avgOutput + stdOutput
     lowerBound = avgOutput - stdOutput
     days = avgOutput[:,-1]
+
+    font = {'family' : 'normal',
+        'size'   : 18}
+
+    matplotlib.rc('font', **font)
+
     pl.plot(days,avgOutput[:,3],'b',lw=4,label='Symptomatic')
     pl.fill_between(days,lowerBound[:,3],upperBound[:,3],facecolor='b',lw=0,alpha=0.5)
     pl.plot(days,avgOutput[:,2],'g',lw=4,label='Incubating')
@@ -538,14 +545,18 @@ if __name__ == '__main__':
     pl.legend(loc=0)
     pl.ylabel('Incidence')
     pl.xlabel('Days')
+    pl.title('Simulated Child-Care Center GI Outbreak')
     pl.ylim(ymin=0)
+
+    pl.tight_layout()
+    pl.savefig('example_simulations.png',dpi=300)
+
     pl.figure()
     pl.plot(days,avgOutput[:,4],color='r',lw=4)
     pl.fill_between(days,lowerBound[:,4],upperBound[:,4],facecolor='r',lw=0,alpha=0.5)
     pl.ylabel('Fomite contamination')
     pl.xlabel('Days')
     pl.ylim(ymin=0)
-    pl.savefig('example_simulations.png',dpi=300)
     pl.show()
     
 

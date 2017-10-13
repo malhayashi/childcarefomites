@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import sys, os
+import numpy as np
 import datetime as dt 
 import pandas as pd
 
@@ -18,6 +19,29 @@ def write_inc_csv(fName, centerName, caseType):
         #print data
     else:
         print 'no cases for this center'
+
+def inc_to_agents(fName, recoveryRate):
+    from fomite_ABM import Agent
+    from numpy.random import exponential
+    data = pd.read_csv(fName,delimiter=',',index_col=0)
+   
+    data['date'] = pd.to_datetime(data['date'])
+    data['date'] = data['date'] - data['date'][0] 
+
+    agentList = []
+    dummyId = 0
+    for row in data.iterrows():
+        numCases = row[1]['cases']
+        relDate = row[1]['date']
+        for i in range(numCases):
+            recover = dt.timedelta(days=exponential(1/float(recoveryRate)))
+            newCase = Agent(id=dummyId,state=3,recoverytime=recover)
+            newCase.timestamp = relDate
+            newCase.data.append((relDate,3))
+            agentList.append(newCase)
+            dummyId += 1
+
+    return agentList
 
 def cases_to_agents(fName, centerName, caseType, recoveryRate):
     from fomite_ABM import Agent
@@ -114,5 +138,6 @@ def parse_cases(fName, centerName, caseType):
 if __name__ == '__main__':
     ### Test code -- change directory as needed
     #cases_to_agents(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e',1/float(5))
-    write_inc_csv(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','r')    
+    #write_inc_csv(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','r')    
+    inc_to_agents('all_e.csv',1/float(5))
 

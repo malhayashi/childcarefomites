@@ -69,7 +69,7 @@ def timestamp_to_hours(ts):
     return ts.total_seconds() / float(3600)
 
 class Agent(object):
-    def __init__(self, id, state=0, contamination=0, neighbors=[], recoverytime=0):
+    def __init__(self, id, state=0, contamination=0, neighbors=[], recoverytime=dt.timedelta()):
         self.id = id
         self.state = state # 0: S, 1: C, 2: I1, 3: I2, 4: R
         self.contamination = contamination

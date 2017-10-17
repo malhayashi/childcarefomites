@@ -63,8 +63,10 @@ class Forecast(object):
             if choice < devolvement_rate:
                 metadata['is_hos'] = True
             householdSize = 4
-            temp = Agent(1,2)
+            
             param = {'contactRateHH': 0.1, 'incubationRate': 1/float(24), 'recoveryRate': 1/float(3*24), 'dayLength': 16, 'numDays': self.days}
+            recoveryTime = dt.datetime(hours=np.random.exponential(scale=1/float(param['recoveryRate']))).total_seconds()/float(3600)
+            temp = Agent(1,2,recoverytime=recoveryTime)
             m = HouseholdModel(temp,householdSize,1,param)
             m.run()
             metadata['house'] = m.output

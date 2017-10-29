@@ -133,7 +133,7 @@ def simple_costs(caseList, costParams):
     for case in caseList:
         outputData['date'].append(case.timestamp)
         sickDays = math.ceil(case.recoveryTime.total_seconds()/float(86400))
-        print sickDays
+        #print sickDays
         parentIncome = norm.rvs(loc=medianIncome,scale=incomeError)
         parentIncomeLost = parentIncome*sickDays/float(260)
         

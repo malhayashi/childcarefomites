@@ -129,9 +129,9 @@ def simple_costs(caseList, costParams):
     medianIncome = costParams['income']['median']
     incomeError = costParams['income']['error']
 
-    outputData = {'date':[],'cost':[]}
+    outputData = {'day':[],'cost':[]}
     for case in caseList:
-        outputData['date'].append(case.timestamp)
+        outputData['day'].append(case.timestamp.days)
         sickDays = math.ceil(case.recoveryTime.total_seconds()/float(86400))
         #print sickDays
         parentIncome = norm.rvs(loc=medianIncome,scale=incomeError)
@@ -148,7 +148,7 @@ def simple_costs(caseList, costParams):
 
         outputData['cost'].append(totalCost)
 
-    return pd.DataFrame(data=outputData,columns=['date','cost'])
+    return pd.DataFrame(data=outputData,columns=['day','cost'])
 
 
 if __name__ == '__main__':
@@ -160,6 +160,18 @@ if __name__ == '__main__':
     agentList = inc_to_agents('all_e.csv',1/float(3))
 
     costs = simple_costs(agentList,costParams)
+    #print costs['day']
+    cumCosts = costs['cost'].cumsum()
+    pl.scatter(costs['day'],costs['cost'])
+    pl.xlabel('Day')
+    pl.ylabel('Total cost')
+    pl.tight_layout()
+    pl.figure()
+    pl.plot(costs['day'],cumCosts)
+    pl.xlabel('Day')
+    pl.ylabel('Cumulative cost')
+    pl.tight_layout()
     print np.sum(costs['cost'])/float(4)
+    pl.show()
     #test()
     

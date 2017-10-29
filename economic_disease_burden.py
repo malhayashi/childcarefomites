@@ -133,6 +133,7 @@ def simple_costs(caseList, costParams):
     for case in caseList:
         outputData['date'].append(case.timestamp)
         sickDays = math.ceil(case.recoveryTime.total_seconds()/float(86400))
+        print sickDays
         parentIncome = norm.rvs(loc=medianIncome,scale=incomeError)
         parentIncomeLost = parentIncome*sickDays/float(260)
         
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     from sickchildcare_parser import *
     jsonParams = open('cost_params.json').read()
     costParams = json.loads(jsonParams)
-    agentList = inc_to_agents('all_e.csv',3)
+    agentList = inc_to_agents('all_e.csv',1/float(3))
 
     costs = simple_costs(agentList,costParams)
     print np.sum(costs['cost'])/float(4)

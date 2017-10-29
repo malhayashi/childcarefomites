@@ -1,0 +1,19 @@
+{
+    "careProbability": 0.88,
+    "primaryCare": {
+        "probability": 0.81,
+        "cost": 101
+    },
+    "urgentCare": {
+        "probability": 0.26,
+        "cost": 102.96
+    },
+    "ER": {
+        "probability": 0.25,
+        "cost": 560
+    },
+    "income": {
+        "median": 65601,
+        "error": 10000
+    }
+}

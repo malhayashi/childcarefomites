@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import random
 from math import *
 
@@ -115,7 +116,49 @@ def test():
     a = Forecast()
     print(a.materials(mat, touse))
 
+def simple_costs(caseList, costParams):
+    import math
+    from scipy.stats import norm
+    providerProb = costParams['careProbability']
+    primaryCareProb = costParams['primaryCare']['probability']
+    primaryCareCost = costParams['primaryCare']['cost']
+    urgentCareProb = costParams['urgentCare']['probability']
+    urgentCareCost = costParams['urgentCare']['cost']
+    ERProb = costParams['ER']['probability']
+    ERCost = costParams['ER']['cost']
+    medianIncome = costParams['income']['median']
+    incomeError = costParams['income']['error']
+
+    outputData = {'date':[],'cost':[]}
+    for case in caseList:
+        outputData['date'].append(case.timestamp)
+        sickDays = math.ceil(case.recoveryTime.total_seconds()/float(86400))
+        parentIncome = norm.rvs(loc=medianIncome,scale=incomeError)
+        parentIncomeLost = parentIncome*sickDays/float(260)
+        
+        totalCost = parentIncomeLost
+        if random.random() < providerProb:
+            if random.random() < primaryCareProb:
+                totalCost += primaryCareCost
+            if random.random() < urgentCareProb:
+                totalCost += urgentCareCost
+            if random.random() < ERProb:
+                totalCost += ERCost
+
+        outputData['cost'].append(totalCost)
+
+    return pd.DataFrame(data=outputData,columns=['date','cost'])
+
 
 if __name__ == '__main__':
-    test()
+    import json
+    import matplotlib.pyplot as pl
+    from sickchildcare_parser import *
+    jsonParams = open('cost_params.json').read()
+    costParams = json.loads(jsonParams)
+    agentList = inc_to_agents('all_e.csv',3)
+
+    costs = simple_costs(agentList,costParams)
+    print np.sum(costs['cost'])/float(4)
+    #test()
     

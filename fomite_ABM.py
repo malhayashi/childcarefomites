@@ -38,9 +38,10 @@ def run_model(m):
 def run_parallel(agentList, fomiteList, endDay, contactNetwork, param, nRuns):
     servers = ('local',)
     jobServer = pp.Server(ppservers=servers)
+    jobServer.set_ncpus(jobServer.get_ncpus()-2)
     print 'active nodes', jobServer.get_active_nodes()
     mList = [Model(copy.deepcopy(agentList),copy.deepcopy(fomiteList),endDay,contactNetwork,param) for i in range(nRuns)]
-
+    print 'submitting jobs'
     output = []
     start = time.time()
     jobs = [jobServer.submit(run_model,args=(m,),depfuncs=(timestamp_to_hours,),modules=('numpy as np','networkx as nx','random as pr','datetime as dt')) for m in mList]
@@ -471,7 +472,7 @@ if __name__ == '__main__':
     ### A bunch of crap to test run the model
     agentList = []
     fomite = Fomite(id='1f')
-    nAgents = 30
+    nAgents = 100
     dayLength = 8
     for i in range(nAgents):
         agentList.append(Agent(id=i))
@@ -480,11 +481,12 @@ if __name__ == '__main__':
     #agentList[1].recoveryTime = 7
     agentList[1].contamination = 500
     ## This matrix assumes one fomite that everybody touches
+    print 'Building agent graph'
     G = nx.complete_graph(nAgents)
     #print G.edges()
     nx.set_node_attributes(G,'bipartite',1)
     G.add_node(fomite.id,bipartite=0)
-
+    print 'Building fomite graph'
     for i in range(nAgents):
         G.add_edge(i,'1f')
 
@@ -504,7 +506,7 @@ if __name__ == '__main__':
     'deconFreq':1,
     'dayLength':8}
 
-    output = run_parallel(agentList, [fomite,], 21, G, param, 100)
+    output = run_parallel(agentList, [fomite,], 21, G, param, 500)
     #m = Model(agentList,[fomite,],14,G,param)
     #m.run()
 

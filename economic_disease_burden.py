@@ -129,7 +129,7 @@ def simple_costs(caseList, costParams):
     medianIncome = costParams['income']['median']
     incomeError = costParams['income']['error']
 
-    outputData = {'day':[],'cost':[]}
+    outputData = {'day':[],'cost':[],'cases':[]}
     for case in caseList:
         outputData['day'].append(case.timestamp.days)
         sickDays = math.ceil(case.recoveryTime.total_seconds()/float(86400))
@@ -147,8 +147,9 @@ def simple_costs(caseList, costParams):
                 totalCost += ERCost
 
         outputData['cost'].append(totalCost)
+        outputData['cases'].append(1)
 
-    return pd.DataFrame(data=outputData,columns=['day','cost'])
+    return pd.DataFrame(data=outputData,columns=['day','cost','cases'])
 
 
 if __name__ == '__main__':
@@ -162,6 +163,7 @@ if __name__ == '__main__':
     costs = simple_costs(agentList,costParams)
     #print costs['day']
     cumCosts = costs['cost'].cumsum()
+    cumCases = costs['cases'].cumsum()
     pl.scatter(costs['day'],costs['cost'])
     pl.xlabel('Day')
     pl.ylabel('Total cost')
@@ -171,7 +173,12 @@ if __name__ == '__main__':
     pl.xlabel('Day')
     pl.ylabel('Cumulative cost')
     pl.tight_layout()
-    print np.sum(costs['cost'])/float(4)
+
+    avgCases = np.sum(costs['cases'])/float(4)
+    avgCost = np.sum(costs['cost'])/float(4)
+    print 'avg annual cases', avgCases
+    print 'avg annual cost', avgCost
+    print 'avg cost/case', avgCost/float(avgCases)
     pl.show()
     #test()
     

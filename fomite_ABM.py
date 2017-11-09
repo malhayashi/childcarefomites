@@ -1,6 +1,7 @@
 import numpy as np
 import networkx as nx
 import random as pr
+import numpy.random as npr
 import matplotlib.pyplot as pl
 import datetime as dt
 import pp
@@ -14,6 +15,7 @@ import tkFileDialog
 import tkSimpleDialog
 import tkMessageBox
 from math import *
+from networkx.algorithms import bipartite
 
 '''
 Notes:
@@ -180,6 +182,7 @@ class Model(object):
                 a.timestamp = dt.timedelta(days = t,hours = h)
                 if a.contamination == 0 and a.state == 1:
                     a.state = 0
+                    self.susceptibleAgents.append(i)
                     self.update_contact_pairs(i)
 
             for j in self.fomiteDict:
@@ -236,7 +239,7 @@ class Model(object):
         return event
 
     def contact(self):
-        pair = pr.choice(self.contactPairs.edges())
+        pair = pr.choice(list(self.contactPairs.edges))
         #print '  contact between', pair
 
         i = pair[0]
@@ -272,8 +275,10 @@ class Model(object):
         a.data.append((self.timestamp,a.state))
         #self.agentDict[i].contamination = 0
         self.infectedAgents.remove(i)
-        nBors = self.contactPairs.edges(i)
-        self.contactPairs.remove_edges_from(nBors)
+        if a.neighbors:
+            nBors = self.contactPairs.edges(i)
+            self.contactPairs.remove_edges_from(nBors)
+
 
     def shed(self):
         i = pr.choice(self.infectedAgents)
@@ -382,7 +387,7 @@ class Model(object):
         for id in self.fomiteDict:
             self.fomiteDict[id].neighbors = [n for n in self.contactNetwork.neighbors(id) if nx.get_node_attributes(self.contactNetwork,'bipartite')[n] == 1]
 
-        ## Tell each person which fomites they touch
+        ## Tell each person which fomites they toucht
         for id in self.agentDict:
             self.agentDict[id].fomiteNeighbors = [n for n in self.contactNetwork.neighbors(id) if nx.get_node_attributes(self.contactNetwork,'bipartite')[n] == 0]
 
@@ -472,7 +477,8 @@ if __name__ == '__main__':
     ### A bunch of crap to test run the model
     agentList = []
     fomite = Fomite(id='1f')
-    nAgents = 100
+    fomite2 = Fomite(id='2f')
+    nAgents = 30
     dayLength = 8
     for i in range(nAgents):
         agentList.append(Agent(id=i))
@@ -482,14 +488,20 @@ if __name__ == '__main__':
     agentList[1].contamination = 500
     ## This matrix assumes one fomite that everybody touches
     print 'Building agent graph'
-    G = nx.complete_graph(nAgents)
+    #G = nx.complete_graph(nAgents)
+    #G = nx.barabasi_albert_graph(nAgents,2)
+    G = nx.erdos_renyi_graph(nAgents,0.04)
+    #nx.draw(G)
+    print 'avg degree', G.size()/float(G.number_of_nodes())
     #print G.edges()
-    nx.set_node_attributes(G,'bipartite',1)
+    nx.set_node_attributes(G,values=1,name='bipartite')
     G.add_node(fomite.id,bipartite=0)
+    G.add_node(fomite2.id,bipartite=0)
     print 'Building fomite graph'
     for i in range(nAgents):
         G.add_edge(i,'1f')
-
+        if pr.random() < 0.3:
+            G.add_edge(i,'2f')
     #print G.neighbors(1)
     param = {'contactRateHH':2/float(dayLength),
     'contactRateHF':10/float(dayLength),
@@ -506,10 +518,12 @@ if __name__ == '__main__':
     'deconFreq':1,
     'dayLength':8}
 
-    output = run_parallel(agentList, [fomite,], 21, G, param, 500)
-    #m = Model(agentList,[fomite,],14,G,param)
+    output = run_parallel(agentList, [fomite,fomite2], 21, G, param, 100)
+    #m = Model(agentList,[fomite,fomite2],14,G,param)
     #m.run()
+    color = nx.get_node_attributes(G,'bipartite')
 
+    nx.draw(G,node_color=[color[n] for n in G.nodes])
     #process_agent_data(m.agentDict)
     #print globals()
 
@@ -528,6 +542,7 @@ if __name__ == '__main__':
     print 'time elapsed', time.time()-start
     '''
     #output = np.array(output)
+
     avgOutput = np.mean(output,axis=0)
     stdOutput = np.std(output,axis=0)
 
@@ -540,18 +555,19 @@ if __name__ == '__main__':
 
     matplotlib.rc('font', **font)
 
-    pl.plot(days,avgOutput[:,3],'b',lw=4,label='Symptomatic')
+    pl.figure()
+    pl.plot(days,avgOutput[:,3],'b',lw=4,label='Infectious')
     pl.fill_between(days,lowerBound[:,3],upperBound[:,3],facecolor='b',lw=0,alpha=0.5)
-    pl.plot(days,avgOutput[:,2],'g',lw=4,label='Incubating')
+    pl.plot(days,avgOutput[:,2],'g',lw=4,label='Latent')
     pl.fill_between(days,lowerBound[:,2],upperBound[:,2],facecolor='g',lw=0,alpha=0.5)
     pl.legend(loc=0)
     pl.ylabel('Incidence')
     pl.xlabel('Days')
-    pl.title('Simulated Child-Care Center GI Outbreak')
+    pl.title('Simulated Child-Care Center\nGI Outbreak')
     pl.ylim(ymin=0)
 
     pl.tight_layout()
-    pl.savefig('example_simulations.png',dpi=300)
+    #pl.savefig('example_simulations.png',dpi=300)
 
     pl.figure()
     pl.plot(days,avgOutput[:,4],color='r',lw=4)
@@ -559,8 +575,9 @@ if __name__ == '__main__':
     pl.ylabel('Fomite contamination')
     pl.xlabel('Days')
     pl.ylim(ymin=0)
+    pl.tight_layout()
     pl.show()
-    
+
 
     #days = 14
     #m = Model(agentList,[fomite,],days,G,copy.deepcopy(param))

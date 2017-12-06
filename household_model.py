@@ -29,16 +29,14 @@ class HouseholdModel(object):
         ### Initialize rate parameters
         self.timestamp = dt.timedelta()
         self.betaHH = param['contactRateHH']        
+        self.latentShape = param['latentShape']
+        self.infectiousShape = param['infectiousShape']
         self.incubationRate = param['incubationRate']
         self.recoveryRate = param['recoveryRate']
         self.dayLength = param['dayLength']
 
         ### Initialize event dictionary
-        self.events = {
-            'human contact': 0,
-            'recovery': 0,
-            'symptom presentation': 0
-        }
+        self.events = self.init_events()
 
         self.susceptibleAgents = []
         self.incubatingAgents = []
@@ -47,6 +45,8 @@ class HouseholdModel(object):
 
         self.initialize_household()
 
+        self.init_event_rates()
+        
         self.events['human contact'] = self.betaHH*len(self.susceptibleAgents)
         # Infectious agents can recover
         self.events['recovery'] = len(self.infectedAgents)*self.recoveryRate
@@ -113,6 +113,58 @@ class HouseholdModel(object):
         self.infectedAgents.remove(i)
         a.timestamp = self.timestamp
         a.data.append((self.timestamp,a.state))
+
+    def init_event_rates(self):
+        eventDict = {'infection': 0,
+                     'infectiousness': 0,
+                     'recovery': 0}
+        for i in range(1,self.latentShape):
+            eventDict['latent'+str(i)] = 0
+        for i in range(1,self.infectiousShape):
+            eventDict['infectious'+str(i)] = 0
+
+        return eventDict
+
+    def make_latent_event(self,latentNum):
+        name = 'latent' + str(latentNum)
+        def latent():
+            oldState = 1+latentNum
+            i = pr.choice(getattr(self,'state'+str(oldState)+'List')
+            a = self.agentDict[i]
+            a.state += 1
+            self.update_state_lists(oldState,a.state)
+            a.timestamp = self.timestamp
+            a.data.append((self.timestamp,a.state))
+
+        setattr(self,name,latent)
+        
+    def make_infectious_event(self,infectiousNum):
+        name = 'infectious' + str(infectiousNum)
+        def infectious():
+            oldState = 1 + self.latentShape + infectiousNum
+            i = pr.choice(getattr(self,'state'+str(oldState)+'List')
+            a = self.agentDict[i]
+            a.state += 1
+            self.update_state_lists(oldState,a.state)
+            a.timestamp = self.timestamp
+            a.data.append((self.timestamp,a.state))
+
+        setattr(self,name,infectious)
+
+    def init_dispatch(self):
+        fcnDict = {'infection': self.infect,
+                   'infectiousness': self.present,
+                   'recovery': self.recover,
+        }
+        for i in range(1,self.latentShape):
+            name = 'latent'+str(i)
+            fcnDict[name] = getattr(self,name)
+
+        for i in range(1,self.infectiousShape):
+            name = 'infectious'+str(i)
+            fcnDict[name] = getattr(self,name)
+
+        return fcnDict
 
     def initialize_household(self):
         for i in xrange(self.N-1):

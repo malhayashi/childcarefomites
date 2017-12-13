@@ -99,11 +99,13 @@ class HouseholdModel(object):
             self.stateLists[i] = []
 
     def initialize_household(self):
-        for i in xrange(self.N-1):
+        self.agentDict[0] = self.child
+        self.stateLists[self.child.state].append(0)
+        for i in xrange(1,self.N):
             agentId = str(i) + 'h' + str(self.id)
             a = Agent(agentId)
             self.agentDict[agentId] = a
-            self.susceptibleAgents.append(agentId)
+            self.stateLists[1].append(agentId)
 
     def update_event_rates(self):
         # Susceptibles and contaminated neighbors may interact

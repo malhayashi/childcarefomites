@@ -28,31 +28,23 @@ class HouseholdModel(object):
         self.id = householdid
         ### Initialize rate parameters
         self.timestamp = dt.timedelta()
-        self.betaHH = param['contactRateHH']        
+        self.beta = param['beta']        
         self.latentShape = param['latentShape']
         self.infectiousShape = param['infectiousShape']
-        self.incubationRate = param['incubationRate']
-        self.recoveryRate = param['recoveryRate']
+        self.latentRate = param['latentRate']
+        self.gamma = param['gamma']
         self.dayLength = param['dayLength']
 
         ### Initialize event dictionary
-        self.events = self.init_events()
+        self.eventDict = self.init_event_dict()
 
-        self.susceptibleAgents = []
-        self.incubatingAgents = []
-        self.infectedAgents = []
+        self.init_agent_lists()
+
         self.output = []
 
         self.initialize_household()
 
-        self.init_event_rates()
-        
-        self.events['human contact'] = self.betaHH*len(self.susceptibleAgents)
-        # Infectious agents can recover
-        self.events['recovery'] = len(self.infectedAgents)*self.recoveryRate
-        # Incubating agents develop symptoms
-        self.events['symptom presentation'] = self.incubationRate*len(self.incubatingAgents)
-        self.totalRate = np.sum(self.events.values())
+        self.update_event_rates()
         #print self.susceptibleAgents
 
     def run(self):
@@ -65,7 +57,7 @@ class HouseholdModel(object):
                 dh = self.draw_event_time()
                 event = self.draw_event()
                 #print event
-                self.resolve(event)
+                self.advance(self.eventDict[event][0])
                 self.update_event_rates()
                 t += dh
                 self.timestamp = dt.timedelta(hours=t)
@@ -78,93 +70,33 @@ class HouseholdModel(object):
     def draw_event(self):
         r = np.random.random()
         s = 0.0
-        for event, rate in self.events.iteritems():
+        for event, rate in self.eventDict.iteritems():
             s += rate/float(self.totalRate)
             if r < s:
                 return event
         return event
 
-    def contact(self):
-        #print self.susceptibleAgents
-        j = pr.choice(self.susceptibleAgents)
-        a = self.agentDict[j]
-        a.state = 2
-        self.susceptibleAgents.remove(j)
-        self.incubatingAgents.append(j)
-        self.child.timestamp = self.timestamp
-        a.timestamp = self.timestamp
-        a.data.append((self.timestamp,a.state))
-
-    def present(self):
-        i = pr.choice(self.incubatingAgents)
-        #print ' ', i, 'developed symptoms'
+    def advance_state(self,state):
+        i = pr.choice(self.stateLists[state])
         a = self.agentDict[i]
-        a.state = 3
-        self.incubatingAgents.remove(i)
-        self.infectedAgents.append(i)
+        a.state += 1
+        self.stateLists[state].remove(i)
+        self.stateLists[state+1].append(i)
         a.timestamp = self.timestamp
         a.data.append((self.timestamp,a.state))
 
-    def recover(self):
-        i = pr.choice(self.infectedAgents)
-        #print ' ', i, 'recovered'
-        a = self.agentDict[i]
-        a.state = 4
-        self.infectedAgents.remove(i)
-        a.timestamp = self.timestamp
-        a.data.append((self.timestamp,a.state))
 
-    def init_event_rates(self):
-        eventDict = {'infection': 0,
-                     'infectiousness': 0,
-                     'recovery': 0}
+    def init_event_dict(self):
+        eventDict = {'infection': [1,0]}
         for i in range(1,self.latentShape):
-            eventDict['latent'+str(i)] = 0
+            eventDict['latent progression '+str(i)] = [1+i,0]
         for i in range(1,self.infectiousShape):
-            eventDict['infectious'+str(i)] = 0
-
+            eventDict['infectious progression '+str(i)] = [1+self.latentShape+i,0]
         return eventDict
 
-    def make_latent_event(self,latentNum):
-        name = 'latent' + str(latentNum)
-        def latent():
-            oldState = 1+latentNum
-            i = pr.choice(getattr(self,'state'+str(oldState)+'List')
-            a = self.agentDict[i]
-            a.state += 1
-            self.update_state_lists(oldState,a.state)
-            a.timestamp = self.timestamp
-            a.data.append((self.timestamp,a.state))
-
-        setattr(self,name,latent)
-        
-    def make_infectious_event(self,infectiousNum):
-        name = 'infectious' + str(infectiousNum)
-        def infectious():
-            oldState = 1 + self.latentShape + infectiousNum
-            i = pr.choice(getattr(self,'state'+str(oldState)+'List')
-            a = self.agentDict[i]
-            a.state += 1
-            self.update_state_lists(oldState,a.state)
-            a.timestamp = self.timestamp
-            a.data.append((self.timestamp,a.state))
-
-        setattr(self,name,infectious)
-
-    def init_dispatch(self):
-        fcnDict = {'infection': self.infect,
-                   'infectiousness': self.present,
-                   'recovery': self.recover,
-        }
-        for i in range(1,self.latentShape):
-            name = 'latent'+str(i)
-            fcnDict[name] = getattr(self,name)
-
-        for i in range(1,self.infectiousShape):
-            name = 'infectious'+str(i)
-            fcnDict[name] = getattr(self,name)
-
-        return fcnDict
+    def init_agent_lists(self):
+        for i in range(1,3+latentNum+infectiousNum):
+            self.stateLists[i] = []
 
     def initialize_household(self):
         for i in xrange(self.N-1):
@@ -175,20 +107,16 @@ class HouseholdModel(object):
 
     def update_event_rates(self):
         # Susceptibles and contaminated neighbors may interact
-        self.events['human contact'] = self.betaHH*len(self.susceptibleAgents)
-        # Infectious agents can recover
-        self.events['recovery'] = len(self.infectedAgents)*self.recoveryRate
-        # Incubating agents develop symptoms
-        self.events['symptom presentation'] = self.incubationRate*len(self.incubatingAgents)
-        self.totalRate = np.sum(self.events.values())
+        self.events['infection'][1] = self.beta*len(self.stateLists[1])
 
-    def resolve(self,event):
-        dispatch = {
-            'human contact': self.contact,
-            'recovery': self.recover,
-            'symptom presentation': self.present
-        }
-        dispatch[event]()
+        # Latent agents progress
+        for i in range(1,latentShape+1):
+            self.events['latent progression ' + str(i)][1] = self.latentRate*len(self.stateLists[1+i])
+
+        # Infectious agents progress
+        for i in range(1,infectiousShape+1):
+            self.events['infectious progression ' + str(i)][1] = self.gamma*len(self.stateLists[1+self.latentShape+i])
+        self.totalRate = np.sum(self.events.values())
 
     def compile_output(self):
         out = {}

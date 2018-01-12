@@ -49,7 +49,8 @@ class HouseholdModel(object):
         #print self.susceptibleAgents
 
     def run(self):
-        tF = self.child.recoveryTime.total_seconds()/float(3600)
+        #tF = self.child.recoveryTime.total_seconds()/float(3600)
+        tF = self.numDays
         t = 0
         while t < tF:
             if self.totalRate == 0:
@@ -58,7 +59,7 @@ class HouseholdModel(object):
                 dh = self.draw_event_time()
                 event = self.draw_event()
                 t += dh
-                self.timestamp = dt.timedelta(hours=t)
+                self.timestamp = dt.timedelta(days=t)
                 self.advance_state(self.eventDict[event][0])
                 self.update_event_rates()
 
@@ -100,7 +101,8 @@ class HouseholdModel(object):
             self.stateLists[i] = []
 
     def initialize_household(self):
-        self.agentDict['0h1'] = self.child
+        self.child.id = '0h' + str(self.id)
+        self.agentDict['0h'+str(self.id)] = self.child
         self.stateLists[self.child.state].append(self.child.id)
         for i in xrange(1,self.N):
             agentId = str(i) + 'h' + str(self.id)
@@ -110,7 +112,7 @@ class HouseholdModel(object):
 
     def update_event_rates(self):
         # Susceptibles and contaminated neighbors may interact
-        numInfectious = sum([len(self.stateLists[i]) for i in range(1+self.latentShape,2+self.latentShape+self.infectiousShape)])
+        numInfectious = sum([len(self.stateLists[i]) for i in range(1+self.latentShape,1+self.latentShape+self.infectiousShape)])
         self.eventDict['infection'][1] = self.beta*len(self.stateLists[0])*numInfectious
 
         # Latent agents progress
@@ -133,15 +135,17 @@ class HouseholdModel(object):
                 if time in out.keys():
                     out[time][entry[1]] += 1
                 else:
-                    outRow[entry[1]] = 1
-                    out[time] = outRow
+                    if time != 0:
+                        outRow[entry[1]-1] = -1
+                        outRow[entry[1]] = 1
+                        out[time] = outRow
   
         self.output = [[k,]+list(out[k]) for k in sorted(out)] 
 
 if __name__ == '__main__':
     from sickchildcare_parser import *
     
-    c = Agent('0h1',2,recoverytime=dt.timedelta(days=5))
+    c = Agent('0h1',5,recoverytime=dt.timedelta(days=5))
     householdSize = 4
     param = {'beta': 0.075, 'latentShape':4,'latentRate':1,'infectiousShape':3,'infectiousRate':1, 'dayLength': 8, 'numDays': 7}
     m = HouseholdModel(c,householdSize,1,param)
@@ -149,10 +153,12 @@ if __name__ == '__main__':
     
     print m.output
     
+    
     '''
-    childList = cases_to_agents('data_export.tsv','all','e',1/float(3))
+    #childList = cases_to_agents('data_export.tsv','all','e',1/float(3))
+    childList = inc_to_agents('all_e.csv',1)
     householdSize = 4
-    param = {'beta': 0.075, 'latentShape':4,'latentRate':0.01,'infectiousShape':3,'infectiousRate':0.05, 'dayLength': 16, 'numDays': 7}
+    param = {'beta': 0.075, 'latentShape':4,'latentRate':1,'infectiousShape':3,'infectiousRate':1, 'dayLength': 8, 'numDays': 7}
 
     outData = []
     id = 0

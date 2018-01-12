@@ -123,7 +123,10 @@ def parse_cases(fName, centerName, caseType):
             #print testCenter
             #print [line[col] for col in cols]
             #print line
-            testDisease = sum([int(line[col]) for col in cols])
+            try:
+                testDisease = sum([int(line[col]) for col in cols])
+            except IndexError:
+                print line
             if testDisease > 0:
                 if center == testCenter:
                     #date = dt.datetime.strptime(line[0],'%m/%d/%Y').date()
@@ -138,6 +141,6 @@ def parse_cases(fName, centerName, caseType):
 if __name__ == '__main__':
     ### Test code -- change directory as needed
     #cases_to_agents(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e',1/float(5))
-    #write_inc_csv(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','r')    
-    inc_to_agents('all_e.csv',1/float(5))
+    write_inc_csv(os.path.join('C:/','Users','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e')    
+    #inc_to_agents('all_e.csv',1/float(5))
 

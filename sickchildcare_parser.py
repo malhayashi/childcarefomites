@@ -138,9 +138,23 @@ def parse_cases(fName, centerName, caseType):
 
     return dataDict
 
+def clean(fName):
+    with open(fName) as f:
+        headLen = f.readline().strip().count('\t')
+        for i, line in enumerate(f.readlines()):
+            #line = line.strip().split('\t')
+            #lineLen = len(line)
+            line = line.strip()
+            lineLen = line.count('\t')
+            if lineLen < (headLen-1):
+                print i, lineLen
+
+
+
 if __name__ == '__main__':
     ### Test code -- change directory as needed
     #cases_to_agents(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e',1/float(5))
-    write_inc_csv(os.path.join('C:/','Users','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e')    
+    #write_inc_csv(os.path.join('C:/','Users','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e')    
     #inc_to_agents('all_e.csv',1/float(5))
+    clean(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export_cleaning_test.tsv'))
 

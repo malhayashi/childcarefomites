@@ -35,9 +35,9 @@ def inc_to_agents(fName, recoveryRate):
         relDate = row[1]['date']
         for i in range(numCases):
             recover = dt.timedelta(days=exponential(1/float(recoveryRate)))
-            newCase = Agent(id=dummyId,state=3,recoverytime=recover)
+            newCase = Agent(id=dummyId,state=2,recoverytime=recover)
             newCase.timestamp = relDate
-            newCase.data.append((relDate,3))
+            newCase.data.append((relDate,2))
             agentList.append(newCase)
             dummyId += 1
 
@@ -125,8 +125,8 @@ def parse_cases(fName, centerName, caseType):
             #print line
             try:
                 testDisease = sum([int(line[col]) for col in cols])
-            except IndexError:
-                print line
+            except (IndexError, ValueError):
+                print i, line
             if testDisease > 0:
                 if center == testCenter:
                     #date = dt.datetime.strptime(line[0],'%m/%d/%Y').date()
@@ -139,15 +139,28 @@ def parse_cases(fName, centerName, caseType):
     return dataDict
 
 def clean(fName):
-    with open(fName) as f:
-        headLen = f.readline().strip().count('\t')
-        for i, line in enumerate(f.readlines()):
-            #line = line.strip().split('\t')
-            #lineLen = len(line)
+    with open(fName) as fIn, open(os.path.join(os.path.dirname(fName),'clean.tsv'),'w') as fOut:
+        
+        outLines = []
+        fList = list(fIn)
+        head = fList[0].strip()
+        headLen = head.count('\t')
+
+        #fOut.write(head+'\n')
+        prevLine = head
+        for i, line in enumerate(fList[1:]):
             line = line.strip()
-            lineLen = line.count('\t')
-            if lineLen < (headLen-1):
-                print i, lineLen
+            propLine = prevLine + line
+            propLen = propLine.count('\t')
+            if propLen in (headLen, headLen-1):
+                print i, propLine
+                prevLine = propLine
+            else:
+                fOut.write(prevLine+'\n')
+                prevLine = line
+            #if lineLen < (headLen-1):
+            #    print i, lineLen
+                    
 
 
 
@@ -156,5 +169,7 @@ if __name__ == '__main__':
     #cases_to_agents(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e',1/float(5))
     #write_inc_csv(os.path.join('C:/','Users','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e')    
     #inc_to_agents('all_e.csv',1/float(5))
-    clean(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export_cleaning_test.tsv'))
+    #clean(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export_curr.tsv'))
+    write_inc_csv(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','clean.tsv'),'all','e')
+    #clean(os.path.join(os.path.expanduser('~'),'Dropbox','Projects','Fomites','Data','data_export_curr.tsv'))
 

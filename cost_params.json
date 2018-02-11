@@ -13,7 +13,6 @@
         "cost": 560
     },
     "income": {
-        "median": 65601,
-        "error": 10000
+        "mean": 89000
     }
 }

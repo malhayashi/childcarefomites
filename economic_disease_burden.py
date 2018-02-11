@@ -118,7 +118,7 @@ def test():
 
 def simple_costs(caseList, costParams):
     import math
-    from scipy.stats import norm
+    from scipy.stats import norm, expon
     providerProb = costParams['careProbability']
     primaryCareProb = costParams['primaryCare']['probability']
     primaryCareCost = costParams['primaryCare']['cost']
@@ -126,15 +126,14 @@ def simple_costs(caseList, costParams):
     urgentCareCost = costParams['urgentCare']['cost']
     ERProb = costParams['ER']['probability']
     ERCost = costParams['ER']['cost']
-    medianIncome = costParams['income']['median']
-    incomeError = costParams['income']['error']
+    meanIncome = costParams['income']['mean']
 
     outputData = {'day':[],'cost':[],'cases':[]}
     for case in caseList:
         outputData['day'].append(case.timestamp.days)
         sickDays = math.ceil(case.recoveryTime.total_seconds()/float(86400))
         #print sickDays
-        parentIncome = norm.rvs(loc=medianIncome,scale=incomeError)
+        parentIncome = expon.rvs(loc=0,scale=meanIncome)
         parentIncomeLost = parentIncome*sickDays/float(260)
         
         totalCost = parentIncomeLost
@@ -164,6 +163,8 @@ if __name__ == '__main__':
     #print costs['day']
     cumCosts = costs['cost'].cumsum()
     cumCases = costs['cases'].cumsum()
+    #pl.tight_layout()
+    '''
     pl.scatter(costs['day'],costs['cost'])
     pl.xlabel('Day')
     pl.ylabel('Total cost')
@@ -173,7 +174,7 @@ if __name__ == '__main__':
     pl.xlabel('Day')
     pl.ylabel('Cumulative cost')
     pl.tight_layout()
-
+    '''
     avgCases = np.sum(costs['cases'])/float(4)
     avgCost = np.sum(costs['cost'])/float(4)
     print 'avg annual cases', avgCases

@@ -23,6 +23,7 @@ class HouseholdModel(object):
 
     def __init__(self,child,householdsize,householdid,param):
         self.child = child
+        self.initState = self.child.state
         self.agentDict = {}
         self.N = householdsize
         self.id = householdid
@@ -41,7 +42,7 @@ class HouseholdModel(object):
 
         self.init_agent_lists()
 
-        self.output = []
+        self.output = None
 
         self.initialize_household()
 
@@ -124,7 +125,7 @@ class HouseholdModel(object):
             self.eventDict['infectious progression ' + str(i)][1] = self.infectiousRate*len(self.stateLists[self.latentShape+i])
         self.totalRate = sum([value[1] for value in self.eventDict.values()])
 
-    def compile_output(self):
+    def compile_events(self):
         out = {}
         for i in self.agentDict.keys():
             a = self.agentDict[i]
@@ -140,34 +141,57 @@ class HouseholdModel(object):
                         outRow[entry[1]] = 1
                         out[time] = outRow
   
-        self.output = [[k,]+list(out[k]) for k in sorted(out)] 
+        return np.array([[k,]+list(out[k]) for k in sorted(out)]) 
+    
+    def compile_output(self):
+        eventList = self.compile_events()
+        initRow = np.zeros((3+self.latentShape+self.infectiousShape))
+        initRow[1] = self.N-1
+        initRow[self.initState+1] = 1
+        outArray = np.zeros((eventList.shape[0]+1,3+self.latentShape+self.infectiousShape))
+        outArray[0,:] = initRow
+        for i, row in enumerate(eventList):
+            newRow = np.zeros((3+self.latentShape+self.infectiousShape))
+            newRow[0] = row[0]
+            newRow[1:] = outArray[i,1:] + row[1:]
+            outArray[i+1] = newRow
+        self.output = outArray
+    
+    def secondary_cases(self):
+        if self.output is None:
+            self.compile_output()
+        return (self.N - 1) - self.output[-1,1]
 
 if __name__ == '__main__':
     from sickchildcare_parser import *
     
-    c = Agent('0h1',5,recoverytime=dt.timedelta(days=5))
+    c = Agent('0h1',1,recoverytime=dt.timedelta(days=5))
     householdSize = 4
-    param = {'beta': 0.075, 'latentShape':4,'latentRate':1,'infectiousShape':3,'infectiousRate':1, 'dayLength': 8, 'numDays': 7}
-    m = HouseholdModel(c,householdSize,1,param)
-    m.run()
+    param = {'beta': 0.14, 'latentShape':4,'latentRate':1/float(1.7),'infectiousShape':1,'infectiousRate':1/float(1.17), 'dayLength': 8, 'numDays': 21}
+    #m = HouseholdModel(c,householdSize,1,param)
+    #m.run()
     
-    print m.output
+    #print m.secondary_cases()
     
-    
-    '''
+    #pl.plot(out[:,0],out[:,1])
+    #pl.show()
     #childList = cases_to_agents('data_export.tsv','all','e',1/float(3))
+
     childList = inc_to_agents('all_e.csv',1)
     householdSize = 4
-    param = {'beta': 0.075, 'latentShape':4,'latentRate':1,'infectiousShape':3,'infectiousRate':1, 'dayLength': 8, 'numDays': 7}
+    #param = {'beta': 0.075, 'latentShape':4,'latentRate':1,'infectiousShape':3,'infectiousRate':1, 'dayLength': 8, 'numDays': 7}
 
     outData = []
     id = 0
     for child in childList:
+        initDay = child.timestamp.days
         m = HouseholdModel(child,householdSize,id,param)
         m.run()
-        data = np.array(m.output)
-        outData.append(np.sum(data[:,3]))
+        outData.append((initDay,m.secondary_cases()))
+        #data = np.array(m.output)
+        #outData.append(np.sum(data[:,3]))
         id += 1
-    print np.mean(outData)
-    print np.std(outData)
-    '''
+    outData = np.array(outData)
+    print outData
+    pl.scatter(outData[:,0],outData[:,1])
+    pl.show()

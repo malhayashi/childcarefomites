@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
+import scipy.stats as ss
 import random
 from math import *
+from household_model import *
 
 class Forecast(object):
 
@@ -116,9 +118,7 @@ def test():
     a = Forecast()
     print(a.materials(mat, touse))
 
-def simple_costs(caseList, costParams):
-    import math
-    from scipy.stats import norm, expon
+def simple_costs(caseList, costParams, diseaseParams):
     providerProb = costParams['careProbability']
     primaryCareProb = costParams['primaryCare']['probability']
     primaryCareCost = costParams['primaryCare']['cost']
@@ -128,41 +128,68 @@ def simple_costs(caseList, costParams):
     ERCost = costParams['ER']['cost']
     meanIncome = costParams['income']['mean']
 
-    outputData = {'day':[],'cost':[],'cases':[]}
+    outputData = {}
+    id = 0
     for case in caseList:
-        outputData['day'].append(case.timestamp.days)
-        sickDays = math.ceil(case.recoveryTime.total_seconds()/float(86400))
-        #print sickDays
-        parentIncome = expon.rvs(loc=0,scale=meanIncome)
-        parentIncomeLost = parentIncome*sickDays/float(260)
-        
-        totalCost = parentIncomeLost
-        if random.random() < providerProb:
-            if random.random() < primaryCareProb:
-                totalCost += primaryCareCost
-            if random.random() < urgentCareProb:
-                totalCost += urgentCareCost
-            if random.random() < ERProb:
-                totalCost += ERCost
+        if case.timestamp.days < 356*4:
+            outputData[id] = {}
+            outputData[id]['day'] = case.timestamp.days
+            sickDays = ceil(ss.gamma.rvs(diseaseParams['infectiousShape'],loc=0,scale=diseaseParams['infectiousScale']))
+            #print sickDays
+            parentIncome = ss.expon.rvs(loc=0,scale=meanIncome)
+            parentIncomeLost = parentIncome*sickDays/float(260)
+            
+            totalCost = parentIncomeLost
+            if random.random() < providerProb:
+                if random.random() < primaryCareProb:
+                    totalCost += primaryCareCost
+                if random.random() < urgentCareProb:
+                    totalCost += urgentCareCost
+                if random.random() < ERProb:
+                    totalCost += ERCost
 
-        outputData['cost'].append(totalCost)
-        outputData['cases'].append(1)
+            m = HouseholdModel(case,4,id,diseaseParams)
+            m.run()
+            secondaryCases = m.secondary_cases()
+            for c in xrange(int(secondaryCases)):
+                sickDays = ceil(ss.gamma.rvs(diseaseParams['infectiousShape'],loc=0,scale=diseaseParams['infectiousScale']))
+                incomeLost = parentIncome*sickDays/float(260)
+                totalCost += incomeLost
 
-    return pd.DataFrame(data=outputData,columns=['day','cost','cases'])
+            outputData[id]['cost'] = totalCost
+            outputData[id]['secondary cases'] = secondaryCases
+            id += 1
 
+    return outputData
+
+def cost_stats(costData):
+    costList = [costData[i]['cost'] for i in costData]
+    avgCases = len(costList)/float(4)
+    avgCaseCost = np.mean([costData[i]['cost'] for i in costData])
+    annualCost = np.sum(costList)/float(4)
+    secondaryCases = np.mean([costData[i]['secondary cases'] for i in costData])
+    print 'average yearly cases : ', avgCases
+    print 'average cost per case : ', avgCaseCost
+    print 'average annual cost : ', annualCost 
+    print 'average secondary cases : ', secondaryCases
 
 if __name__ == '__main__':
     import json
     import matplotlib.pyplot as pl
     from sickchildcare_parser import *
-    jsonParams = open('cost_params.json').read()
-    costParams = json.loads(jsonParams)
+    jsonEconParams = open('cost_params.json').read()
+    costParams = json.loads(jsonEconParams)
     agentList = inc_to_agents('all_e.csv',1/float(3))
 
-    costs = simple_costs(agentList,costParams)
+    jsonDiseaseParams = open('noro_household_params.json').read()
+    diseaseParams = json.loads(jsonDiseaseParams)
+    diseaseParams['numDays'] = 21
+    costs = simple_costs(agentList,costParams,diseaseParams)
+
+    cost_stats(costs)
     #print costs['day']
-    cumCosts = costs['cost'].cumsum()
-    cumCases = costs['cases'].cumsum()
+    #cumCosts = costs['cost'].cumsum()
+    #cumCases = costs['cases'].cumsum()
     #pl.tight_layout()
     '''
     pl.scatter(costs['day'],costs['cost'])
@@ -174,7 +201,6 @@ if __name__ == '__main__':
     pl.xlabel('Day')
     pl.ylabel('Cumulative cost')
     pl.tight_layout()
-    '''
     avgCases = np.sum(costs['cases'])/float(4)
     avgCost = np.sum(costs['cost'])/float(4)
     print 'avg annual cases', avgCases
@@ -182,4 +208,5 @@ if __name__ == '__main__':
     print 'avg cost/case', avgCost/float(avgCases)
     pl.show()
     #test()
+    '''
     

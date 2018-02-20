@@ -110,7 +110,7 @@ def parse_cases(fName, centerName, caseType):
         if disease == 'e':
             cols = (11,)
         else:
-            cols = (9,12,13)
+            cols = (9,12)
 
         out = ['line,date,cases']
         dataDict = {}
@@ -169,7 +169,7 @@ if __name__ == '__main__':
     #cases_to_agents(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e',1/float(5))
     #write_inc_csv(os.path.join('C:/','Users','micha','Dropbox','Projects','Fomites','Data','data_export.tsv'),'all','e')    
     #inc_to_agents('all_e.csv',1/float(5))
-    #clean(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export_curr.tsv'))
-    write_inc_csv(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','clean.tsv'),'all','e')
+    clean(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','data_export_curr.tsv'))
+    write_inc_csv(os.path.join('D:/','micha','Dropbox','Projects','Fomites','Data','clean.tsv'),'all','r')
     #clean(os.path.join(os.path.expanduser('~'),'Dropbox','Projects','Fomites','Data','data_export_curr.tsv'))
 

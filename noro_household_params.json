@@ -1,0 +1,7 @@
+{
+    "beta": 0.14,
+    "latentShape": 4,
+    "latentScale": 1.7,
+    "infectiousShape": 1,
+    "infectiousScale": 1.17
+}

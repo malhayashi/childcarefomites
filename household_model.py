@@ -32,9 +32,8 @@ class HouseholdModel(object):
         self.beta = param['beta']        
         self.latentShape = param['latentShape']
         self.infectiousShape = param['infectiousShape']
-        self.latentRate = param['latentRate']
-        self.infectiousRate = param['infectiousRate']
-        self.dayLength = param['dayLength']
+        self.latentRate = 1/float(param['latentScale'])
+        self.infectiousRate = 1/float(param['infectiousScale'])
         self.numDays = param['numDays']
 
         ### Initialize event dictionary
@@ -163,16 +162,20 @@ class HouseholdModel(object):
         return (self.N - 1) - self.output[-1,1]
 
 if __name__ == '__main__':
+    import json
     from sickchildcare_parser import *
     
     c = Agent('0h1',1,recoverytime=dt.timedelta(days=5))
     householdSize = 4
-    param = {'beta': 0.14, 'latentShape':4,'latentRate':1/float(1.7),'infectiousShape':1,'infectiousRate':1/float(1.17), 'dayLength': 8, 'numDays': 21}
-    #m = HouseholdModel(c,householdSize,1,param)
-    #m.run()
+    jsonParams = open('noro_household_params.json').read()
+    param = json.loads(jsonParams)
+    param['numDays'] = 21
+    '''
+    m = HouseholdModel(c,householdSize,1,param)
+    m.run()
     
-    #print m.secondary_cases()
-    
+    print m.secondary_cases()
+    '''
     #pl.plot(out[:,0],out[:,1])
     #pl.show()
     #childList = cases_to_agents('data_export.tsv','all','e',1/float(3))
@@ -192,6 +195,6 @@ if __name__ == '__main__':
         #outData.append(np.sum(data[:,3]))
         id += 1
     outData = np.array(outData)
-    print outData
-    pl.scatter(outData[:,0],outData[:,1])
-    pl.show()
+    #print outData
+    print np.sum(outData[:,1])
+    print np.mean(outData[:,1])

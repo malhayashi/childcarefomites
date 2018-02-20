@@ -2,7 +2,7 @@
     "careProbability": 0.88,
     "primaryCare": {
         "probability": 0.81,
-        "cost": 101
+        "cost": 138
     },
     "urgentCare": {
         "probability": 0.26,
@@ -10,7 +10,7 @@
     },
     "ER": {
         "probability": 0.25,
-        "cost": 560
+        "cost": 573
     },
     "income": {
         "mean": 89000

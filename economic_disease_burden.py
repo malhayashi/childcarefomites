@@ -127,6 +127,14 @@ def simple_costs(caseList, costParams, diseaseParams):
     ERProb = costParams['ER']['probability']
     ERCost = costParams['ER']['cost']
     meanIncome = costParams['income']['mean']
+    incomeShape = costParams['income']['shape']
+    incomeScale = costParams['income']['scale']
+
+    adultPrimaryCareProb = diseaseParams['primaryCareProb']
+    adultERProb = diseaseParams['ERProb']
+
+    HHsizes = costParams['household']['size']
+    HHdist = costParams['household']['proportion']
 
     outputData = {}
     id = 0
@@ -134,42 +142,58 @@ def simple_costs(caseList, costParams, diseaseParams):
         if case.timestamp.days < 356*4:
             outputData[id] = {}
             outputData[id]['day'] = case.timestamp.days
-            sickDays = ceil(ss.gamma.rvs(diseaseParams['infectiousShape'],loc=0,scale=diseaseParams['infectiousScale']))
+            sickDays = ceil(ss.gamma.rvs(diseaseParams['symptomaticShape'],loc=0,scale=diseaseParams['symptomaticScale']))
             #print sickDays
-            parentIncome = ss.expon.rvs(loc=0,scale=meanIncome)
+            #parentIncome = ss.expon.rvs(loc=0,scale=meanIncome)
+            parentIncome = ss.gamma.rvs(incomeShape,0,incomeScale)
             parentIncomeLost = parentIncome*sickDays/float(260)
-            
-            totalCost = parentIncomeLost
+            HHsize = np.random.choice(a=HHsizes,size=1,p=HHdist)
+
+            indirectCost = parentIncomeLost
+            directCost = 0
             if random.random() < providerProb:
                 if random.random() < primaryCareProb:
-                    totalCost += primaryCareCost
+                    directCost += primaryCareCost
                 if random.random() < urgentCareProb:
-                    totalCost += urgentCareCost
+                    directCost += urgentCareCost
                 if random.random() < ERProb:
-                    totalCost += ERCost
+                    directCost += ERCost
 
-            m = HouseholdModel(case,4,id,diseaseParams)
+            m = HouseholdModel(case,HHsize,id,diseaseParams)
             m.run()
             secondaryCases = m.secondary_cases()
             for c in xrange(int(secondaryCases)):
-                sickDays = ceil(ss.gamma.rvs(diseaseParams['infectiousShape'],loc=0,scale=diseaseParams['infectiousScale']))
+                if random.random() < adultPrimaryCareProb:
+                    directCost += primaryCareCost
+                if random.random() < adultERProb:
+                    directCost += ERCost
+                sickDays = ceil(ss.gamma.rvs(diseaseParams['symptomaticShape'],loc=0,scale=diseaseParams['symptomaticScale']))
                 incomeLost = parentIncome*sickDays/float(260)
-                totalCost += incomeLost
+                indirectCost += incomeLost
 
-            outputData[id]['cost'] = totalCost
+            totalCost = directCost + indirectCost
+            outputData[id]['total cost'] = totalCost
+            outputData[id]['indirect cost'] = indirectCost
+            outputData[id]['direct cost'] = directCost
             outputData[id]['secondary cases'] = secondaryCases
             id += 1
 
     return outputData
 
 def cost_stats(costData):
-    costList = [costData[i]['cost'] for i in costData]
+    costList = [costData[i]['total cost'] for i in costData]
+    directCostList = [costData[i]['direct cost'] for i in costData]
+    indirectCostList = np.array(costList) - np.array(directCostList)
     avgCases = len(costList)/float(4)
-    avgCaseCost = np.mean([costData[i]['cost'] for i in costData])
+    avgCaseCost = np.mean(costList)
+    avgDirectCost = np.mean(directCostList)
+    avgIndirectCost = np.mean(indirectCostList)
     annualCost = np.sum(costList)/float(4)
     secondaryCases = np.mean([costData[i]['secondary cases'] for i in costData])
     print 'average yearly cases : ', avgCases
     print 'average cost per case : ', avgCaseCost
+    print 'average direct costs : ', avgDirectCost
+    print 'average indirect costs : ', avgIndirectCost
     print 'average annual cost : ', annualCost 
     print 'average secondary cases : ', secondaryCases
 

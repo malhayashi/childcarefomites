@@ -1,7 +1,11 @@
 {
     "beta": 0.14,
     "latentShape": 4,
-    "latentScale": 1.7,
-    "infectiousShape": 1,
-    "infectiousScale": 1.17
+    "latentScale": 0.425,
+    "infectiousShape": 3,
+    "infectiousScale": 4.83,
+    "symptomaticShape": 1,
+    "symptomaticScale": 2,
+    "primaryCareProb": 0.054,
+    "ERProb": 0.00228
 }

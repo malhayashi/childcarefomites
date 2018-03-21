@@ -5,7 +5,7 @@
     "infectiousShape": 3,
     "infectiousScale": 4.83,
     "symptomaticShape": 1,
-    "symptomaticScale": 2,
+    "symptomaticScale": 1,
     "primaryCareProb": 0.054,
     "ERProb": 0.00228
 }

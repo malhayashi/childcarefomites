@@ -143,6 +143,7 @@ def simple_costs(caseList, costParams, diseaseParams):
             outputData[id] = {}
             outputData[id]['day'] = case.timestamp.days
             sickDays = ceil(ss.gamma.rvs(diseaseParams['symptomaticShape'],loc=0,scale=diseaseParams['symptomaticScale']))
+            print sickDays
             #print sickDays
             #parentIncome = ss.expon.rvs(loc=0,scale=meanIncome)
             parentIncome = ss.gamma.rvs(incomeShape,0,incomeScale)
